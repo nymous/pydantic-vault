@@ -4,7 +4,7 @@ A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings]
 
 ## Getting started
 
-Same as with the Pydantic `BaseSettings`, create a class that inherits `pydantic_vault.VaultBaseSettings`, then define your fields and configure the settings with
+Same as with the Pydantic `BaseSettings`, create a class that inherits from `pydantic_vault.VaultBaseSettings`, then define your fields and configure the settings with
 
 ```python
 import os
@@ -22,12 +22,19 @@ class Settings(VaultBaseSettings):
         vault_namespace: str = "your/namespace"  # Optional, pydantic-vault supports Vault namespaces (for Vault Enterprise)
         vault_secret_mount_point: str = "secrets"  # Optional, if your KV v2 secrets engine is not available at the default "secret" mount point
 
+settings = Settings()
+# These variables will come from the Vault secret you configured
+settings.username
+settings.password.get_secret_value()
 
-# Let's pretend we want to override a value with something from the environment
+
+# Now let's pretend we have already set the USERNAME in an environment variable
+# (see the Pydantic documentation for more information and to know how to configure it)
+# Its value will override the Vault secret
 os.environ["USERNAME"] = "my user"
 
 settings = Settings()
-settings.username  # "my user"
+settings.username  # "my user", defined in the environment variable
 settings.password.get_secret_value()  # the value set in Vault
 ```
 
@@ -87,5 +94,5 @@ Pydantic-Vault is available under the [MIT license](./LICENSE).
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
 [pydantic-basesettings-priority]: https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority
-[vault]: https://www.hashicorp.com/products/vault/
+[vault]: https://www.vaultproject.io/
 [vault-kv-v2]: https://www.vaultproject.io/docs/secrets/kv/kv-v2/
