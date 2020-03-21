@@ -1,5 +1,7 @@
 # Pydantic-Vault
 
+![Check code](https://github.com/nymous/pydantic-vault/workflows/Check%20code/badge.svg)
+
 A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets from a [KV v2 secrets engine][vault-kv-v2] in Hashicorp [Vault][vault]
 
 ## Getting started
