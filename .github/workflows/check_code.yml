@@ -1,0 +1,31 @@
+name: Check code
+
+on: [push]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+
+    - name: Install Poetry
+      uses: dschep/install-poetry-action@71da422ac9b75e0716e7c74b0062c887aee1c6a7
+      with:
+        version: 1.0.5
+
+    - name: Set Poetry config
+      run: poetry config virtualenvs.path ~/.virtualenvs
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Check formatting with Black
+      run: poetry run black --check .
+
+    - name: Type check with Mypy
+      run: poetry run mypy pydantic_vault
