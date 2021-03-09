@@ -16,9 +16,9 @@ jobs:
           python-version: 3.6
 
       - name: Install Poetry
-        uses: dschep/install-poetry-action@71da422ac9b75e0716e7c74b0062c887aee1c6a7
+        uses: snok/install-poetry@b67da837e42fb77252a06a3eb84cf0ccaad73aa9
         with:
-          version: 1.0.5
+          version: 1.1.5
 
       - name: Publish on PyPi
         run: poetry publish --build
