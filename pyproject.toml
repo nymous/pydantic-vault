@@ -21,6 +21,9 @@ classifiers = [
   "Topic :: Internet",
   "Topic :: Security"
 ]
+packages = [
+  { include = "pydantic_vault", from = "src" }
+]
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/nymous/pydantic-vault/issues"
