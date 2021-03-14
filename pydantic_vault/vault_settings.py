@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Optional, Any
 
-import hvac
+from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
 from pydantic import BaseSettings
 from pydantic.env_settings import SettingsError
@@ -24,11 +24,11 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     # Login
     hvac_parameters: HvacClientParameters = {}
     if getattr(settings.__config__, "vault_namespace", None) is not None:
-        hvac_parameters.update({"namespace": settings.__config__.vault_namespace})
+        hvac_parameters.update({"namespace": settings.__config__.vault_namespace})  # type: ignore
     if getattr(settings.__config__, "vault_token", None) is not None:
-        hvac_parameters.update({"token": settings.__config__.vault_token})
+        hvac_parameters.update({"token": settings.__config__.vault_token})  # type: ignore
 
-    vault_client = hvac.Client(settings.__config__.vault_url, **hvac_parameters)
+    vault_client = HvacClient(settings.__config__.vault_url, **hvac_parameters)  # type: ignore
 
     # Get secrets
     for field in settings.__fields__.values():
@@ -36,11 +36,11 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
 
         vault_secret_path = field.field_info.extra["vault_secret_path"]
         vault_secret_key = field.field_info.extra["vault_secret_key"]
-        vault_secret_mount_point = getattr(settings.__config__, "vault_secret_mount_point", None)
+        vault_secret_mount_point = getattr(
+            settings.__config__, "vault_secret_mount_point", None
+        )
 
-        read_secret_parameters: HvacReadSecretParameters = {
-            "path": vault_secret_path
-        }
+        read_secret_parameters: HvacReadSecretParameters = {"path": vault_secret_path}
         if vault_secret_mount_point is not None:
             read_secret_parameters["mount_point"] = vault_secret_mount_point
 
