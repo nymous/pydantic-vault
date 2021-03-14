@@ -37,3 +37,6 @@ jobs:
 
     - name: Type check with Mypy
       run: poetry run mypy
+
+    - name: Run tests
+      run: poetry run pytest
