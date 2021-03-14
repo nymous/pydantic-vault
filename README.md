@@ -6,15 +6,17 @@ A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings]
 
 ## Getting started
 
-Same as with the Pydantic `BaseSettings`, create a class that inherits from `pydantic_vault.VaultBaseSettings`, then define your fields and configure the settings with
+Starting with Pydantic 1.8, [custom settings sources][pydantic-basesettings-customsource] are officially supported.
+
+You can create a normal `BaseSettings` class, and define the `customise_sources()` method to load secrets from your Vault instance using the `vault_config_settings_source` function:
 
 ```python
 import os
 
-from pydantic import SecretStr, Field
-from pydantic_vault import VaultBaseSettings
+from pydantic import BaseSettings, Field, SecretStr
+from pydantic_vault import vault_config_settings_source
 
-class Settings(VaultBaseSettings):
+class Settings(BaseSettings):
     username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
     password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
 
@@ -24,6 +26,21 @@ class Settings(VaultBaseSettings):
         vault_namespace: str = "your/namespace"  # Optional, pydantic-vault supports Vault namespaces (for Vault Enterprise)
         vault_secret_mount_point: str = "secrets"  # Optional, if your KV v2 secrets engine is not available at the default "secret" mount point
 
+        @classmethod
+        def customise_sources(
+                cls,
+                init_settings,
+                env_settings,
+                file_secret_settings,
+        ):
+            # This is where you can choose which settings sources to use and their priority
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+                file_secret_settings
+            )
+
 settings = Settings()
 # These variables will come from the Vault secret you configured
 settings.username
@@ -32,7 +49,7 @@ settings.password.get_secret_value()
 
 # Now let's pretend we have already set the USERNAME in an environment variable
 # (see the Pydantic documentation for more information and to know how to configure it)
-# Its value will override the Vault secret
+# With the priority order we defined above, its value will override the Vault secret
 os.environ["USERNAME"] = "my user"
 
 settings = Settings()
@@ -71,6 +88,7 @@ In your `Settings.Config` class you can configure the following elements:
 
 | Settings name              | Required | Description |
 |----------------------------|----------|-------------|
+| `customise_sources()`      | **Yes**  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
 | `vault_url`                | **Yes**  | Your Vault URL |
 | `vault_token`              | **Yes**  | A token allowing to connect to Vault (retrieve it with any auth method you want) |
 | `vault_namespace`          | No       | Your Vault namespace (if you use one, requires Vault Enterprise) |
@@ -80,14 +98,62 @@ You can also configure everything available in the original Pydantic `BaseSettin
 
 ### Order of priority
 
-Settings values are determined as follows (in descending order of priority):
-  - arguments passed to the `Settings` class initializer
-  - environment variables
-  - Vault variables
-  - the default field values for the `Settings` model
+Thanks to the new feature in Pydantic 1.8 that allows you to [customize settings sources][pydantic-basesettings-customsource], you can choose the order of priority you want.
 
-It's the [same order][pydantic-basesettings-priority] as with the original `BaseSettings`, but with Vault just before the default values.
+Here are some examples:
+```python
+from pydantic import BaseSettings
+from pydantic_vault import vault_config_settings_source
 
+class Settings(BaseSettings):
+    """
+    In descending order of priority:
+      - arguments passed to the `Settings` class initializer
+      - environment variables
+      - Vault variables
+      - variables loaded from the secrets directory, such as Docker Secrets
+      - the default field values for the `Settings` model
+    """
+    class Config:
+        @classmethod
+        def customise_sources(
+                cls,
+                init_settings,
+                env_settings,
+                file_secret_settings,
+        ):
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+                file_secret_settings
+            )
+
+
+class Settings(BaseSettings):
+    """
+    In descending order of priority:
+      - Vault variables
+      - environment variables
+      - variables loaded from the secrets directory, such as Docker Secrets
+      - the default field values for the `Settings` model
+    Here we chose to remove the "init arguments" source,
+    and move the Vault source up before the environment source
+    """
+    class Config:
+        @classmethod
+        def customise_sources(
+                cls,
+                init_settings,
+                env_settings,
+                file_secret_settings,
+        ):
+            return (
+                vault_config_settings_source,
+                env_settings,
+                file_secret_settings
+            )
+```
 
 ## License
 
@@ -95,6 +161,6 @@ Pydantic-Vault is available under the [MIT license](./LICENSE).
 
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
-[pydantic-basesettings-priority]: https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority
+[pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
 [vault]: https://www.vaultproject.io/
 [vault-kv-v2]: https://www.vaultproject.io/docs/secrets/kv/kv-v2/
