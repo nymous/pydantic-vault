@@ -1,9 +1,10 @@
 import logging
+import os
 from typing import Dict, Optional, Any
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
-from pydantic import BaseSettings
+from pydantic import BaseSettings, SecretStr
 from pydantic.env_settings import SettingsError
 from typing_extensions import TypedDict
 
@@ -18,17 +19,54 @@ class HvacReadSecretParameters(TypedDict, total=False):
     mount_point: str
 
 
+class PydanticVaultException(BaseException):
+    ...
+
+
+class VaultParameterError(PydanticVaultException, ValueError):
+    ...
+
+
+def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
+    hvac_parameters: HvacClientParameters = {}
+
+    # URL
+    _vault_url: Optional[str] = None
+    if getattr(settings.__config__, "vault_url", None) is not None:
+        _vault_url = settings.__config__.vault_url  # type: ignore
+    if "VAULT_ADDR" in os.environ:
+        _vault_url = os.environ["VAULT_ADDR"]
+    if _vault_url is None:
+        raise VaultParameterError("No URL provided to connect to Vault")
+
+    # Namespace
+    _vault_namespace: str
+    if getattr(settings.__config__, "vault_namespace", None) is not None:
+        _vault_namespace = settings.__config__.vault_namespace  # type: ignore
+        hvac_parameters.update({"namespace": _vault_namespace})
+    if "VAULT_NAMESPACE" in os.environ:
+        _vault_namespace = os.environ["VAULT_NAMESPACE"]
+        hvac_parameters.update({"namespace": _vault_namespace})
+
+    # Vault token
+    _vault_token: str
+    if getattr(settings.__config__, "vault_token", None) is not None:
+        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
+            _vault_token = settings.__config__.vault_token.get_secret_value()  # type: ignore
+        else:
+            _vault_token = settings.__config__.vault_token  # type: ignore
+        hvac_parameters.update({"token": _vault_token})
+    if "VAULT_TOKEN" in os.environ:
+        _vault_token = os.environ["VAULT_TOKEN"]
+        hvac_parameters.update({"token": _vault_token})
+
+    return HvacClient(_vault_url, **hvac_parameters)
+
+
 def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     d: Dict[str, Optional[str]] = {}
 
-    # Login
-    hvac_parameters: HvacClientParameters = {}
-    if getattr(settings.__config__, "vault_namespace", None) is not None:
-        hvac_parameters.update({"namespace": settings.__config__.vault_namespace})  # type: ignore
-    if getattr(settings.__config__, "vault_token", None) is not None:
-        hvac_parameters.update({"token": settings.__config__.vault_token})  # type: ignore
-
-    vault_client = HvacClient(settings.__config__.vault_url, **hvac_parameters)  # type: ignore
+    vault_client = _get_authenticated_vault_client(settings)
 
     # Get secrets
     for field in settings.__fields__.values():
