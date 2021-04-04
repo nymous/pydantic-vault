@@ -72,8 +72,13 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     for field in settings.__fields__.values():
         vault_val: Optional[str] = None
 
-        vault_secret_path = field.field_info.extra["vault_secret_path"]
-        vault_secret_key = field.field_info.extra["vault_secret_key"]
+        vault_secret_path = field.field_info.extra.get("vault_secret_path")
+        vault_secret_key = field.field_info.extra.get("vault_secret_key")
+
+        if vault_secret_path is None or vault_secret_key is None:
+            logging.debug(f"Skipping field {field.name}")
+            continue
+
         vault_secret_mount_point = getattr(
             settings.__config__, "vault_secret_mount_point", None
         )
