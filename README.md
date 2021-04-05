@@ -86,13 +86,13 @@ Support is planned for Approle and Kubernetes authentication methods.
 
 In your `Settings.Config` class you can configure the following elements:
 
-| Settings name              | Required | Description |
-|----------------------------|----------|-------------|
-| `customise_sources()`      | **Yes**  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
-| `vault_url`                | **Yes**  | Your Vault URL |
-| `vault_token`              | **Yes**  | A token allowing to connect to Vault (retrieve it with any auth method you want) |
-| `vault_namespace`          | No       | Your Vault namespace (if you use one, requires Vault Enterprise) |
-| `vault_secret_mount_point` | No       | The mount point of the KV v2 secrets engine, if different from the default `"secret"` mount point |
+| Settings name              | Required | Environment variable | Description |
+|----------------------------|----------|----------------------|-------------|
+| `customise_sources()`      | **Yes**  | N/A                  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
+| `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
+| `vault_token`              | **Yes**  | `VAULT_TOKEN`        | A token allowing to connect to Vault (retrieve it with any auth method you want) |
+| `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
+| `vault_secret_mount_point` | No       | N/A                  | The mount point of the KV v2 secrets engine, if different from the default `"secret"` mount point |
 
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 
@@ -155,10 +155,17 @@ class Settings(BaseSettings):
             )
 ```
 
+## Inspirations
+
+- [Ansible `hashi_vault` lookup plugin][ansible hashi_vault] for the API and some code
+- [Hashicorp's Vault GitHub Action][vault-action] for the API
+
 ## License
 
 Pydantic-Vault is available under the [MIT license](./LICENSE).
 
+[ansible hashi_vault]: https://docs.ansible.com/ansible/latest/collections/community/hashi_vault/hashi_vault_lookup.html
+[vault-action]: https://github.com/hashicorp/vault-action
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
 [pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
