@@ -76,25 +76,60 @@ For example, if you create a secret `database/prod` with a key `password` and a 
 password: SecretStr = Field(..., vault_secret_path="database/prod", vault_secret_key="password")
 ```
 
+### Configuration
+
+You can configure the behaviour of Pydantic-vault in your `Settings.Config` class, or using environment variables:
+
+| Settings name              | Required | Environment variable | Description |
+|----------------------------|----------|----------------------|-------------|
+| `customise_sources()`      | **Yes**  | N/A                  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
+| `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
+| `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
+| `vault_secret_mount_point` | No       | N/A                  | The mount point of the KV v2 secrets engine, if different from the default `"secret"` mount point |
+
+You can also configure everything available in the original Pydantic `BaseSettings` class.
+
 ### Authentication
 
 For now Pydantic-Vault only supports direct token authentication, that is you must authenticate using your method of choice then pass the resulting Vault token to your `Settings` class.
 
 Support is planned for Approle and Kubernetes authentication methods.
 
-### Configuration
+#### Vault token
 
-In your `Settings.Config` class you can configure the following elements:
+To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
-| Settings name              | Required | Environment variable | Description |
-|----------------------------|----------|----------------------|-------------|
-| `customise_sources()`      | **Yes**  | N/A                  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
-| `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
-| `vault_token`              | **Yes**  | `VAULT_TOKEN`        | A token allowing to connect to Vault (retrieve it with any auth method you want) |
-| `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
-| `vault_secret_mount_point` | No       | N/A                  | The mount point of the KV v2 secrets engine, if different from the default `"secret"` mount point |
+Pydantic-vault reads this token from the following sources (in decreasing order of priority):
+  - the `VAULT_TOKEN` environment variable
+  - the `~/.vault-token` file
+  - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
 
-You can also configure everything available in the original Pydantic `BaseSettings` class.
+```python
+from pydantic import BaseSettings, Field, SecretStr
+from pydantic_vault import vault_config_settings_source
+
+class Settings(BaseSettings):
+    username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
+    password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
+
+    class Config:
+        vault_url: str = "https://vault.tld"
+        vault_token: SecretStr = SecretStr("my-secret-token")
+
+        @classmethod
+        def customise_sources(
+                cls,
+                init_settings,
+                env_settings,
+                file_secret_settings,
+        ):
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+                file_secret_settings
+            )
+```
 
 ### Order of priority
 
@@ -165,9 +200,10 @@ class Settings(BaseSettings):
 Pydantic-Vault is available under the [MIT license](./LICENSE).
 
 [ansible hashi_vault]: https://docs.ansible.com/ansible/latest/collections/community/hashi_vault/hashi_vault_lookup.html
-[vault-action]: https://github.com/hashicorp/vault-action
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
 [pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
 [vault]: https://www.vaultproject.io/
+[vault-action]: https://github.com/hashicorp/vault-action
+[vault-auth-token]: https://www.vaultproject.io/docs/auth/token
 [vault-kv-v2]: https://www.vaultproject.io/docs/secrets/kv/kv-v2/

@@ -39,17 +39,19 @@ def bypass_hvac_client(mocker: MockerFixture) -> MagicMock:
     return mock_hvac_client.return_value
 
 
-def test_get_vault_secrets(fake_hvac_client) -> None:
-    fake_hvac_client.secrets.kv.v2.read_secret_version.side_effect = (
-        fake_vault
-    )
+def test_get_vault_secrets(fake_hvac_client: MagicMock) -> None:
+    fake_hvac_client.secrets.kv.v2.read_secret_version.side_effect = fake_vault
 
     class Settings(BaseSettings):
         username: str = Field(
-            "doesn't matter", vault_secret_path="first_level_key", vault_secret_key="username"
+            "doesn't matter",
+            vault_secret_path="first_level_key",
+            vault_secret_key="username",
         )
         password: SecretStr = Field(
-            "doesn't matter", vault_secret_path="first_level_key", vault_secret_key="password"
+            "doesn't matter",
+            vault_secret_path="first_level_key",
+            vault_secret_key="password",
         )
 
         class Config:
@@ -62,11 +64,13 @@ def test_get_vault_secrets(fake_hvac_client) -> None:
     assert vault_settings_dict == {"username": "my_user", "password": "my_password"}
 
 
-def test_do_not_search_vault_for_keys_not_configured():
+def test_do_not_search_vault_for_keys_not_configured() -> None:
     class Settings(BaseSettings):
         simple_field: str = "doesn't matter"
         field_from_vault: str = Field(
-            "doesn't matter", vault_secret_path="first_level_key", vault_secret_key="password"
+            "doesn't matter",
+            vault_secret_path="first_level_key",
+            vault_secret_key="password",
         )
 
         class Config:
