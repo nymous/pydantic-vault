@@ -1,5 +1,7 @@
 import logging
 import os
+from contextlib import suppress
+from pathlib import Path
 from typing import Dict, Optional, Any
 
 from hvac import Client as HvacClient
@@ -56,6 +58,10 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
         else:
             _vault_token = settings.__config__.vault_token  # type: ignore
         hvac_parameters.update({"token": _vault_token})
+    with suppress(FileNotFoundError):
+        with open(Path.home() / ".vault-token") as token_file:
+            _vault_token = token_file.read().strip()
+            hvac_parameters.update({"token": _vault_token})
     if "VAULT_TOKEN" in os.environ:
         _vault_token = os.environ["VAULT_TOKEN"]
         hvac_parameters.update({"token": _vault_token})
