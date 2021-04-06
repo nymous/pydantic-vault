@@ -2,7 +2,7 @@ import logging
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, NamedTuple
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
@@ -50,23 +50,74 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
         _vault_namespace = os.environ["VAULT_NAMESPACE"]
         hvac_parameters.update({"namespace": _vault_namespace})
 
-    # Vault token
-    _vault_token: str
-    if getattr(settings.__config__, "vault_token", None) is not None:
-        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
-            _vault_token = settings.__config__.vault_token.get_secret_value()  # type: ignore
+    _vault_token = _extract_vault_token(settings)
+    if _vault_token is not None:
+        hvac_parameters.update({"token": _vault_token.get_secret_value()})
+        hvac_client = HvacClient(_vault_url, **hvac_parameters)
+        return hvac_client
+
+    hvac_client = HvacClient(_vault_url, **hvac_parameters)
+
+    _vault_approle = _extract_approle(settings)
+    if _vault_approle is not None:
+        hvac_client.auth.approle.login(
+            role_id=_vault_approle.role_id,
+            secret_id=_vault_approle.secret_id.get_secret_value(),
+        )
+        return hvac_client
+
+
+class Approle(NamedTuple):
+    role_id: str
+    secret_id: SecretStr
+
+
+def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
+    """Extract Approle information from environment or from BaseSettings.Config"""
+    _vault_role_id: Optional[str] = None
+    _vault_secret_id: Optional[SecretStr] = None
+
+    # Load from BaseSettings.Config
+    if getattr(settings.__config__, "vault_role_id", None) is not None:
+        _vault_role_id = settings.__config__.vault_role_id  # type: ignore
+    if getattr(settings.__config__, "vault_secret_id", None) is not None:
+        if isinstance(settings.__config__.vault_secret_id, SecretStr):  # type: ignore
+            _vault_secret_id = settings.__config__.vault_secret_id  # type: ignore
         else:
-            _vault_token = settings.__config__.vault_token  # type: ignore
-        hvac_parameters.update({"token": _vault_token})
+            _vault_secret_id = SecretStr(settings.__config__.vault_secret_id)  # type: ignore
+
+    # Load (and eventually override) from environment
+    if "VAULT_ROLE_ID" in os.environ:
+        _vault_role_id = os.environ["VAULT_ROLE_ID"]
+    if "VAULT_SECRET_ID" in os.environ:
+        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
+
+    if _vault_role_id is not None and _vault_secret_id is not None:
+        return Approle(role_id=_vault_role_id, secret_id=_vault_secret_id)
+
+    return None
+
+
+def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
+    """Extract Vault token from environment, from .vault-token file or from BaseSettings.Config"""
+    _vault_token: SecretStr
+    if "VAULT_TOKEN" in os.environ:
+        _vault_token = SecretStr(os.environ["VAULT_TOKEN"])
+        return _vault_token
+
     with suppress(FileNotFoundError):
         with open(Path.home() / ".vault-token") as token_file:
-            _vault_token = token_file.read().strip()
-            hvac_parameters.update({"token": _vault_token})
-    if "VAULT_TOKEN" in os.environ:
-        _vault_token = os.environ["VAULT_TOKEN"]
-        hvac_parameters.update({"token": _vault_token})
+            _vault_token = SecretStr(token_file.read().strip())
+            return _vault_token
 
-    return HvacClient(_vault_url, **hvac_parameters)
+    if getattr(settings.__config__, "vault_token", None) is not None:
+        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
+            _vault_token = settings.__config__.vault_token  # type: ignore
+        else:
+            _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
+        return _vault_token
+
+    return None
 
 
 def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:

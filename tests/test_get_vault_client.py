@@ -13,6 +13,8 @@ from pydantic_vault.vault_settings import _get_authenticated_vault_client
 def clean_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.delenv("VAULT_TOKEN", raising=False)
     monkeypatch.delenv("VAULT_ADDR", raising=False)
+    monkeypatch.delenv("VAULT_ROLE_ID", raising=False)
+    monkeypatch.delenv("VAULT_SECRET_ID", raising=False)
 
 
 @pytest.fixture(autouse=True)
@@ -104,7 +106,7 @@ def test_get_vault_client_with_vault_token_in_config(mocker: MockerFixture) -> N
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld", token="fake-token")
 
-    # vault_token is a SecretStr, we need to unwrap it
+    # vault_token is a SecretStr, we will need to unwrap it
     class SettingsWithSecretToken(BaseSettings):
         class Config:
             vault_url: str = "https://vault.tld"
@@ -118,7 +120,7 @@ def test_get_vault_client_with_vault_token_in_config(mocker: MockerFixture) -> N
     vault_client_mock.assert_called_once_with("https://vault.tld", token="fake-token")
 
 
-def test_get_vault_client_reads_from_token_file(
+def test_get_vault_client_with_vault_token_in_token_file(
     mocker: MockerFixture, mock_vault_token_from_file: str
 ) -> None:
     class Settings(BaseSettings):
@@ -218,6 +220,109 @@ def test_get_vault_client_vault_token_priority_file_config(
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
         "https://vault.tld", token=mock_vault_token_from_file
+    )
+
+
+def test_get_vault_client_approle_in_config(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch
+) -> None:
+    # vault_secret_id is a str
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id"
+            vault_secret_id: str = "fake-secret-id"
+
+    settings: BaseSettings = Settings()
+
+    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id", secret_id="fake-secret-id"
+    )
+
+    # vault_secret_id is a SecretStr, we will need to unwrap it
+    class SettingsWithSecretSecretId(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id"
+            vault_secret_id: SecretStr = SecretStr("fake-secret-id")
+
+    settings = SettingsWithSecretSecretId()
+
+    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id", secret_id="fake-secret-id"
+    )
+
+
+def test_get_vault_client_approle_in_environment(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+
+    monkeypatch.setenv("VAULT_ROLE_ID", "fake-role-id")
+    monkeypatch.setenv("VAULT_SECRET_ID", "fake-secret-id")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id", secret_id="fake-secret-id"
+    )
+
+
+def test_get_vault_client_approle_in_environment_and_config(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id"
+
+    monkeypatch.setenv("VAULT_SECRET_ID", "fake-secret-id")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id", secret_id="fake-secret-id"
+    )
+
+
+def test_get_vault_client_approle_priority_env_config(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id-from-config"
+            vault_secret_id: SecretStr = SecretStr("fake-secret-id-from-config")
+
+    monkeypatch.setenv("VAULT_ROLE_ID", "fake-role-id-from-env")
+    monkeypatch.setenv("VAULT_SECRET_ID", "fake-secret-id-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id-from-env", secret_id="fake-secret-id-from-env"
     )
 
 

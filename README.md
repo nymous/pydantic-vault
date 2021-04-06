@@ -1,6 +1,8 @@
 # Pydantic-Vault
 
-![Check code](https://github.com/nymous/pydantic-vault/workflows/Check%20code/badge.svg)
+[![PyPI](https://img.shields.io/pypi/v/pydantic-vault)](https://pypi.org/project/pydantic-vault/)
+[![Check code](https://github.com/nymous/pydantic-vault/workflows/Check%20code/badge.svg)](https://github.com/nymous/pydantic-vault/actions/workflows/check_code.yml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets from a [KV v2 secrets engine][vault-kv-v2] in Hashicorp [Vault][vault]
 
@@ -91,19 +93,61 @@ You can also configure everything available in the original Pydantic `BaseSettin
 
 ### Authentication
 
-For now Pydantic-Vault only supports direct token authentication, that is you must authenticate using your method of choice then pass the resulting Vault token to your `Settings` class.
+For now Pydantic-Vault supports the following authentication method (in descending order of priority):
+  - [direct token authentication][vault-auth-token]
+  - [approle][vault-auth-approle]
 
-Support is planned for Approle and Kubernetes authentication methods.
+Support is planned for Kubernetes authentication methods.
+
+#### Approle
+
+To authenticate using the [Approle auth method][vault-auth-approle], you need to pass a role ID and a secret ID to your Settings class.
+
+Pydantic-vault reads this information from the following sources (in descending order of priority):
+  - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
+  - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.Config` class (`vault_secret_id` can be a `str` or a `SecretStr`)
+
+You can also mix-and-match, e.g. write the role ID in your `Settings.Config` class and retrieve the secret ID from the environment at runtime.
+
+Example:
+```python
+from pydantic import BaseSettings, Field, SecretStr
+from pydantic_vault import vault_config_settings_source
+
+class Settings(BaseSettings):
+    username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
+    password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
+
+    class Config:
+        vault_url: str = "https://vault.tld"
+        vault_role_id: str = "my-role-id"
+        vault_secret_id_id: SecretStr = SecretStr("my-secret-id")
+
+        @classmethod
+        def customise_sources(
+                cls,
+                init_settings,
+                env_settings,
+                file_secret_settings,
+        ):
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+                file_secret_settings
+            )
+```
 
 #### Vault token
 
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
-Pydantic-vault reads this token from the following sources (in decreasing order of priority):
+Pydantic-vault reads this token from the following sources (in descending order of priority):
   - the `VAULT_TOKEN` environment variable
   - the `~/.vault-token` file
   - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
 
+Example:
 ```python
 from pydantic import BaseSettings, Field, SecretStr
 from pydantic_vault import vault_config_settings_source
@@ -205,5 +249,6 @@ Pydantic-Vault is available under the [MIT license](./LICENSE).
 [pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
 [vault]: https://www.vaultproject.io/
 [vault-action]: https://github.com/hashicorp/vault-action
+[vault-auth-approle]: https://www.vaultproject.io/docs/auth/approle
 [vault-auth-token]: https://www.vaultproject.io/docs/auth/token
 [vault-kv-v2]: https://www.vaultproject.io/docs/secrets/kv/kv-v2/
