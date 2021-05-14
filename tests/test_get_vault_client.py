@@ -18,18 +18,25 @@ def clean_env(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def mock_home_dir(monkeypatch: MonkeyPatch, tmp_path: Path) -> Path:
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    return tmp_path
+def mock_filesystem(fs) -> None:
+    pass
 
 
 @pytest.fixture
-def mock_vault_token_from_file(mock_home_dir: Path) -> str:
+def mock_vault_token_from_file(fs) -> str:
     """Return the token written in the .vault-token file"""
     vault_token = "token-from-file"
-    with open(mock_home_dir / ".vault-token", "w") as token_file:
-        token_file.write(vault_token)
+    vault_token_path = Path.home() / ".vault-token"
+    fs.create_file(vault_token_path, contents=vault_token)
     return vault_token
+
+
+@pytest.fixture
+def mock_kubernetes_token_from_file(fs) -> str:
+    kubernetes_token = "fake-kubernetes-token"
+    kubernetes_token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    fs.create_file(kubernetes_token_path, contents=kubernetes_token)
+    return kubernetes_token
 
 
 def test_get_vault_client_with_namespace_in_config(mocker: MockerFixture) -> None:
