@@ -48,7 +48,9 @@ def test_get_vault_client_with_namespace_in_config(mocker: MockerFixture) -> Non
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -67,7 +69,9 @@ def test_get_vault_client_with_namespace_in_environment(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -91,7 +95,9 @@ def test_get_vault_client_namespace_priority(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -136,7 +142,9 @@ def test_get_vault_client_with_vault_token_in_token_file(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -155,7 +163,9 @@ def test_get_vault_client_with_vault_token_in_environment(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld", token="fake-token")
@@ -177,7 +187,9 @@ def test_get_vault_client_vault_token_priority_env_config(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -200,7 +212,9 @@ def test_get_vault_client_vault_token_priority_env_file(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -222,7 +236,9 @@ def test_get_vault_client_vault_token_priority_file_config(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
@@ -280,7 +296,9 @@ def test_get_vault_client_approle_in_environment(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
@@ -301,7 +319,9 @@ def test_get_vault_client_approle_in_environment_and_config(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
@@ -324,7 +344,9 @@ def test_get_vault_client_approle_priority_env_config(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
@@ -340,7 +362,9 @@ def test_get_vault_client_with_vault_url_in_config(mocker: MockerFixture) -> Non
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
@@ -356,7 +380,9 @@ def test_get_vault_client_with_vault_url_in_environment(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
@@ -377,7 +403,9 @@ def test_get_vault_client_vault_url_priority(
 
     settings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault-from-environment.tld")
@@ -392,3 +420,24 @@ def test_get_vault_client_with_no_vault_url_fails() -> None:
     with pytest.raises(VaultParameterError) as e:
         _get_authenticated_vault_client(settings)
     assert "URL" in str(e)
+
+
+def test_get_vault_client_with_kubernetes_token(
+    mocker: MockerFixture, mock_kubernetes_token_from_file: str
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: str = "my-role"
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role", mock_kubernetes_token_from_file
+    )

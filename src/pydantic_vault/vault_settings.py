@@ -58,6 +58,25 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
 
     hvac_client = HvacClient(_vault_url, **hvac_parameters)
 
+    _vault_kubernetes_jwt = _extract_kubernetes()
+    if _vault_kubernetes_jwt is not None:
+        # Kubernetes role
+        kubernetes_role: Optional[SecretStr] = None
+        if getattr(settings.__config__, "vault_kubernetes_role", None) is not None:
+            if isinstance(settings.__config__.vault_kubernetes_role, SecretStr):  # type: ignore
+                kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
+            else:
+                kubernetes_role = SecretStr(settings.__config__.vault_kubernetes_role)  # type: ignore
+
+        if "VAULT_KUBERNETES_ROLE" in os.environ:
+            kubernetes_role = SecretStr(os.environ["VAULT_KUBERNETES_ROLE"])
+
+        if kubernetes_role is not None:
+            hvac_client.auth_kubernetes(
+                kubernetes_role.get_secret_value(),
+                _vault_kubernetes_jwt.get_secret_value(),
+            )
+
     _vault_approle = _extract_approle(settings)
     if _vault_approle is not None:
         hvac_client.auth.approle.login(
@@ -116,6 +135,17 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
         else:
             _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
         return _vault_token
+
+    return None
+
+
+def _extract_kubernetes():
+    """Extract Kubernetes token from default file"""
+    _kubernetes_jwt: SecretStr
+    with suppress(FileNotFoundError):
+        with open("/var/run/secrets/kubernetes.io/serviceaccount/token") as token_file:
+            _kubernetes_jwt = SecretStr(token_file.read().strip())
+            return _kubernetes_jwt
 
     return None
 
