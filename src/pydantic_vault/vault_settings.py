@@ -152,6 +152,7 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
             logging.info(
                 f'could not get secret "{vault_secret_path}:{vault_secret_key}"'
             )
+            continue
 
         if field.is_complex():
             try:

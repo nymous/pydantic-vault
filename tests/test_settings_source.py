@@ -82,3 +82,31 @@ def test_do_not_search_vault_for_keys_not_configured() -> None:
     vault_settings_dict = vault_config_settings_source(settings)
     assert "field_from_vault" in vault_settings_dict
     assert "simple_field" not in vault_settings_dict
+
+
+def test_do_not_override_keys_not_found(fake_hvac_client: MagicMock) -> None:
+    fake_hvac_client.secrets.kv.v2.read_secret_version.side_effect = fake_vault
+
+    class Settings(BaseSettings):
+        field_from_vault: str = Field(
+            "doesn't matter",
+            vault_secret_path="first_level_key",
+            vault_secret_key="password",
+        )
+        field_not_found: str = Field(
+            "default_value",
+            vault_secret_path="not/found",
+            vault_secret_key="does_not_exist",
+        )
+
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_token: SecretStr = SecretStr("fake-token")
+
+    settings = Settings()
+
+    vault_settings_dict = vault_config_settings_source(settings)
+    assert "field_from_vault" in vault_settings_dict
+    assert "field_not_found" not in vault_settings_dict
+
+    assert settings.field_not_found == "default_value"
