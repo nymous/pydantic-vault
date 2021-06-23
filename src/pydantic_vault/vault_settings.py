@@ -76,6 +76,7 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
                 kubernetes_role.get_secret_value(),
                 _vault_kubernetes_jwt.get_secret_value(),
             )
+            return hvac_client
 
     _vault_approle = _extract_approle(settings)
     if _vault_approle is not None:
@@ -139,7 +140,7 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
     return None
 
 
-def _extract_kubernetes():
+def _extract_kubernetes() -> Optional[SecretStr]:
     """Extract Kubernetes token from default file"""
     _kubernetes_jwt: SecretStr
     with suppress(FileNotFoundError):

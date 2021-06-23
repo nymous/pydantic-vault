@@ -2,6 +2,7 @@ from pathlib import Path
 
 from pydantic import BaseSettings, SecretStr
 import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 
@@ -15,15 +16,16 @@ def clean_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.delenv("VAULT_ADDR", raising=False)
     monkeypatch.delenv("VAULT_ROLE_ID", raising=False)
     monkeypatch.delenv("VAULT_SECRET_ID", raising=False)
+    monkeypatch.delenv("VAULT_KUBERNETES_ROLE", raising=False)
 
 
 @pytest.fixture(autouse=True)
-def mock_filesystem(fs) -> None:
+def mock_filesystem(fs: FakeFilesystem) -> None:
     pass
 
 
 @pytest.fixture
-def mock_vault_token_from_file(fs) -> str:
+def mock_vault_token_from_file(fs: FakeFilesystem) -> str:
     """Return the token written in the .vault-token file"""
     vault_token = "token-from-file"
     vault_token_path = Path.home() / ".vault-token"
@@ -32,7 +34,7 @@ def mock_vault_token_from_file(fs) -> str:
 
 
 @pytest.fixture
-def mock_kubernetes_token_from_file(fs) -> str:
+def mock_kubernetes_token_from_file(fs: FakeFilesystem) -> str:
     kubernetes_token = "fake-kubernetes-token"
     kubernetes_token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     fs.create_file(kubernetes_token_path, contents=kubernetes_token)
@@ -441,3 +443,27 @@ def test_get_vault_client_with_kubernetes_token(
     vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
         "my-role", mock_kubernetes_token_from_file
     )
+
+
+def test_get_vault_client_kubernetes_approle_priority(
+    mocker: MockerFixture, mock_kubernetes_token_from_file: str
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: str = "my-role"
+            vault_role_id: str = "fake-role-id"
+            vault_secret_id: str = "fake-secret-id"
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role", mock_kubernetes_token_from_file
+    )
+    vault_client_mock.return_value.auth.approle.login.assert_not_called()
