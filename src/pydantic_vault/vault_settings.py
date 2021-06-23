@@ -21,6 +21,10 @@ class HvacReadSecretParameters(TypedDict, total=False):
     mount_point: str
 
 
+class AuthMethodParameters(TypedDict, total=False):
+    mount_point: str
+
+
 class PydanticVaultException(BaseException):
     ...
 
@@ -50,6 +54,15 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
         _vault_namespace = os.environ["VAULT_NAMESPACE"]
         hvac_parameters.update({"namespace": _vault_namespace})
 
+    # Auth method parameters
+    _vault_auth_method_parameters: AuthMethodParameters = {}
+    if getattr(settings.__config__, "vault_auth_mount_point", None) is not None:
+        _vault_auth_method_parameters["mount_point"] = settings.__config__.vault_auth_mount_point  # type: ignore
+    if "VAULT_AUTH_MOUNT_POINT" in os.environ:
+        _vault_auth_method_parameters["mount_point"] = os.environ[
+            "VAULT_AUTH_MOUNT_POINT"
+        ]
+
     _vault_token = _extract_vault_token(settings)
     if _vault_token is not None:
         hvac_parameters.update({"token": _vault_token.get_secret_value()})
@@ -75,6 +88,7 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
             hvac_client.auth_kubernetes(
                 kubernetes_role.get_secret_value(),
                 _vault_kubernetes_jwt.get_secret_value(),
+                **_vault_auth_method_parameters,
             )
             return hvac_client
 
@@ -83,6 +97,7 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
         hvac_client.auth.approle.login(
             role_id=_vault_approle.role_id,
             secret_id=_vault_approle.secret_id.get_secret_value(),
+            **_vault_auth_method_parameters,
         )
         return hvac_client
 
