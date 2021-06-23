@@ -357,6 +357,84 @@ def test_get_vault_client_approle_priority_env_config(
     )
 
 
+def test_get_vault_client_approle_custom_auth_mount_point_in_config(
+    mocker: MockerFixture,
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id"
+            vault_secret_id: SecretStr = SecretStr("fake-secret-id")
+            vault_auth_mount_point: str = "custom-approle-from-config"
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id",
+        secret_id="fake-secret-id",
+        mount_point="custom-approle-from-config",
+    )
+
+
+def test_get_vault_client_approle_custom_auth_mount_point_in_environment(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id"
+            vault_secret_id: SecretStr = SecretStr("fake-secret-id")
+
+    monkeypatch.setenv("VAULT_AUTH_MOUNT_POINT", "custom-approle-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id",
+        secret_id="fake-secret-id",
+        mount_point="custom-approle-from-env",
+    )
+
+
+def test_get_vault_client_approle_custom_auth_mount_point_priority_env_config(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_role_id: str = "fake-role-id"
+            vault_secret_id: SecretStr = SecretStr("fake-secret-id")
+            vault_auth_mount_point: str = "custom-approle-from-config"
+
+    monkeypatch.setenv("VAULT_AUTH_MOUNT_POINT", "custom-approle-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
+        role_id="fake-role-id",
+        secret_id="fake-secret-id",
+        mount_point="custom-approle-from-env",
+    )
+
+
 def test_get_vault_client_with_vault_url_in_config(mocker: MockerFixture) -> None:
     class Settings(BaseSettings):
         class Config:
@@ -467,3 +545,82 @@ def test_get_vault_client_kubernetes_approle_priority(
         "my-role", mock_kubernetes_token_from_file
     )
     vault_client_mock.return_value.auth.approle.login.assert_not_called()
+
+
+def test_get_vault_client_kubernetes_custom_auth_mount_point_in_config(
+    mocker: MockerFixture, mock_kubernetes_token_from_file: str
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: str = "my-role"
+            vault_auth_mount_point: str = "custom-kubernetes-from-config"
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role",
+        mock_kubernetes_token_from_file,
+        mount_point="custom-kubernetes-from-config",
+    )
+
+
+def test_get_vault_client_kubernetes_custom_auth_mount_point_in_environment(
+    mocker: MockerFixture,
+    mock_kubernetes_token_from_file: str,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: str = "my-role"
+
+    monkeypatch.setenv("VAULT_AUTH_MOUNT_POINT", "custom-kubernetes-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role",
+        mock_kubernetes_token_from_file,
+        mount_point="custom-kubernetes-from-env",
+    )
+
+
+def test_get_vault_client_kubernetes_custom_auth_mount_point_priority_env_config(
+    mocker: MockerFixture,
+    mock_kubernetes_token_from_file: str,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: str = "my-role"
+            vault_auth_mount_point: str = "custom-kubernetes-from-config"
+
+    monkeypatch.setenv("VAULT_AUTH_MOUNT_POINT", "custom-kubernetes-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role",
+        mock_kubernetes_token_from_file,
+        mount_point="custom-kubernetes-from-env",
+    )
