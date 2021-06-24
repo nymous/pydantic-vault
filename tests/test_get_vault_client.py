@@ -502,7 +502,7 @@ def test_get_vault_client_with_no_vault_url_fails() -> None:
     assert "URL" in str(e)
 
 
-def test_get_vault_client_with_kubernetes_token(
+def test_get_vault_client_with_kubernetes_token_role_in_config(
     mocker: MockerFixture, mock_kubernetes_token_from_file: str
 ) -> None:
     class Settings(BaseSettings):
@@ -520,6 +520,55 @@ def test_get_vault_client_with_kubernetes_token(
     vault_client_mock.assert_called_once_with("https://vault.tld")
     vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
         "my-role", mock_kubernetes_token_from_file
+    )
+
+
+def test_get_vault_client_with_kubernetes_token_role_in_environment(
+    mocker: MockerFixture,
+    mock_kubernetes_token_from_file: str,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+
+    monkeypatch.setenv("VAULT_KUBERNETES_ROLE", "my-role-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role-from-env", mock_kubernetes_token_from_file
+    )
+
+
+def test_get_vault_client_with_kubernetes_token_role_priority_env_config(
+    mocker: MockerFixture,
+    mock_kubernetes_token_from_file: str,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: str = "my-role-from-config"
+
+    monkeypatch.setenv("VAULT_KUBERNETES_ROLE", "my-role-from-env")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with("https://vault.tld")
+    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        "my-role-from-env", mock_kubernetes_token_from_file
     )
 
 
