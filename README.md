@@ -88,6 +88,7 @@ You can configure the behaviour of Pydantic-vault in your `Settings.Config` clas
 | `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
 | `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
 | `vault_secret_mount_point` | No       | N/A                  | The mount point of the KV v2 secrets engine, if different from the default `"secret"` mount point |
+| `vault_auth_mount_point`   | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point |
 
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 
@@ -95,9 +96,10 @@ You can also configure everything available in the original Pydantic `BaseSettin
 
 For now Pydantic-Vault supports the following authentication method (in descending order of priority):
   - [direct token authentication][vault-auth-token]
+  - [kubernetes][vault-auth-kubernetes]
   - [approle][vault-auth-approle]
 
-Support is planned for Kubernetes authentication methods.
+Support is planned for GKE authentication methods.
 
 #### Approle
 
@@ -138,13 +140,51 @@ class Settings(BaseSettings):
             )
 ```
 
+#### Kubernetes
+
+To authenticate using the [Kubernetes auth method][vault-auth-kubernetes], you need to pass a role to your Settings class.
+
+Pydantic-vault reads this information from the following sources (in descending order of priority):
+  - the `VAULT_KUBERNETES_ROLE` environment variable
+  - the `vault_kubernetes_role` configuration field in your `Settings.Config` class, which must be a `str`
+
+The Kubernetes service account token will be read from the file at `/var/run/secrets/kubernetes.io/serviceaccount/token`.
+
+Example:
+```python
+from pydantic import BaseSettings, Field, SecretStr
+from pydantic_vault import vault_config_settings_source
+
+class Settings(BaseSettings):
+    username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
+    password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
+
+    class Config:
+        vault_url: str = "https://vault.tld"
+        vault_kubernetes_role: str = "my-role"
+
+        @classmethod
+        def customise_sources(
+                cls,
+                init_settings,
+                env_settings,
+                file_secret_settings,
+        ):
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+                file_secret_settings
+            )
+```
+
 #### Vault token
 
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
 Pydantic-vault reads this token from the following sources (in descending order of priority):
   - the `VAULT_TOKEN` environment variable
-  - the `~/.vault-token` file
+  - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-vault will transparently reuse its token)
   - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
 
 Example:
@@ -250,5 +290,6 @@ Pydantic-Vault is available under the [MIT license](./LICENSE).
 [vault]: https://www.vaultproject.io/
 [vault-action]: https://github.com/hashicorp/vault-action
 [vault-auth-approle]: https://www.vaultproject.io/docs/auth/approle
+[vault-auth-kubernetes]: https://www.vaultproject.io/docs/auth/kubernetes
 [vault-auth-token]: https://www.vaultproject.io/docs/auth/token
 [vault-kv-v2]: https://www.vaultproject.io/docs/secrets/kv/kv-v2/
