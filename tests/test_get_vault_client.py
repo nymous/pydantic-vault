@@ -10,20 +10,6 @@ from pydantic_vault import VaultParameterError
 from pydantic_vault.vault_settings import _get_authenticated_vault_client
 
 
-@pytest.fixture(autouse=True)
-def clean_env(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.delenv("VAULT_TOKEN", raising=False)
-    monkeypatch.delenv("VAULT_ADDR", raising=False)
-    monkeypatch.delenv("VAULT_ROLE_ID", raising=False)
-    monkeypatch.delenv("VAULT_SECRET_ID", raising=False)
-    monkeypatch.delenv("VAULT_KUBERNETES_ROLE", raising=False)
-
-
-@pytest.fixture(autouse=True)
-def mock_filesystem(fs: FakeFilesystem) -> None:
-    pass
-
-
 @pytest.fixture
 def mock_vault_token_from_file(fs: FakeFilesystem) -> str:
     """Return the token written in the .vault-token file"""
