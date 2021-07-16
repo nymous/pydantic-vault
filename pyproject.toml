@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydantic-vault"
-version = "0.5.0a0"
+version = "0.6.0b0"
 description = "A simple extension to Pydantic BaseSettings that can retrieve secrets from Hashicorp Vault"
 authors = ["Thomas Gaudin <thomas.gaudin@centraliens-lille.org>"]
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/nymous/pydantic-vault"
 documentation = "https://github.com/nymous/pydantic-vault"
 keywords = ["hashicorp", "vault", "hvac", "pydantic"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3 :: Only",
   "Typing :: Typed",
   "Intended Audience :: Developers",
