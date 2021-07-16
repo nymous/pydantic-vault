@@ -213,8 +213,11 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
             try:
                 vault_val = settings.__config__.json_loads(vault_val)  # type: ignore
             except ValueError as e:
+                secret_full_path = vault_secret_path
+                if vault_secret_key is not None:
+                    secret_full_path += f":{vault_secret_key}"
                 raise SettingsError(
-                    f'error parsing JSON for "{vault_secret_path}{":" + vault_secret_key if vault_secret_key is not None else ""}"'
+                    f'error parsing JSON for "{secret_full_path}"'
                 ) from e
 
         d[field.alias] = vault_val
