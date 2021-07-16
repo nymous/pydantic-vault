@@ -167,13 +167,13 @@ def _extract_kubernetes() -> Optional[SecretStr]:
 
 
 def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
-    d: Dict[str, Optional[str]] = {}
+    d: Dict[str, Any] = {}
 
     vault_client = _get_authenticated_vault_client(settings)
 
     # Get secrets
     for field in settings.__fields__.values():
-        vault_val: Union[str, dict]
+        vault_val: Union[str, Dict[str, Any]]
 
         vault_secret_path: Optional[str] = field.field_info.extra.get(
             "vault_secret_path"

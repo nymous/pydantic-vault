@@ -152,7 +152,9 @@ def test_get_secret_without_key() -> None:
             {"username": "doesn't matter", "password": "doesn't matter"},
             vault_secret_path="database/creds/db_role",
         )
-        kvv2_secret: dict = Field({}, vault_secret_path="secret/data/first_level_key")
+        kvv2_secret: Dict[str, Any] = Field(
+            {}, vault_secret_path="secret/data/first_level_key"
+        )
 
         class Config:
             vault_url: str = "https://vault.tld"
@@ -227,17 +229,17 @@ def test_get_secret_jsonified() -> None:
 
 def test_get_secret_in_data_key() -> None:
     class Settings(BaseSettings):
-        kvv1_data_with_key: dict = Field(
+        kvv1_data_with_key: Dict[str, Any] = Field(
             {}, vault_secret_path="kv/secret_with_data_key", vault_secret_key="data"
         )
         # FIXME: KV v1 secret with a `data` key and configured without a
         #        vault_secret_key is currently not supported
-        kvv2_data_with_key: dict = Field(
+        kvv2_data_with_key: Dict[str, Any] = Field(
             {},
             vault_secret_path="secret/data/secret_with_data_key",
             vault_secret_key="data",
         )
-        kvv2_data_without_key: dict = Field(
+        kvv2_data_without_key: Dict[str, Any] = Field(
             {},
             vault_secret_path="secret/data/secret_with_data_key",
         )
