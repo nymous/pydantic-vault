@@ -38,30 +38,30 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
 
     # URL
     _vault_url: Optional[str] = None
-    if getattr(settings.__config__, "vault_url", None) is not None:
-        _vault_url = settings.__config__.vault_url  # type: ignore
     if "VAULT_ADDR" in os.environ:
         _vault_url = os.environ["VAULT_ADDR"]
+    if getattr(settings.__config__, "vault_url", None) is not None:
+        _vault_url = settings.__config__.vault_url  # type: ignore
     if _vault_url is None:
         raise VaultParameterError("No URL provided to connect to Vault")
 
     # Namespace
     _vault_namespace: str
-    if getattr(settings.__config__, "vault_namespace", None) is not None:
-        _vault_namespace = settings.__config__.vault_namespace  # type: ignore
-        hvac_parameters.update({"namespace": _vault_namespace})
     if "VAULT_NAMESPACE" in os.environ:
         _vault_namespace = os.environ["VAULT_NAMESPACE"]
+        hvac_parameters.update({"namespace": _vault_namespace})
+    if getattr(settings.__config__, "vault_namespace", None) is not None:
+        _vault_namespace = settings.__config__.vault_namespace  # type: ignore
         hvac_parameters.update({"namespace": _vault_namespace})
 
     # Auth method parameters
     _vault_auth_method_parameters: AuthMethodParameters = {}
-    if getattr(settings.__config__, "vault_auth_mount_point", None) is not None:
-        _vault_auth_method_parameters["mount_point"] = settings.__config__.vault_auth_mount_point  # type: ignore
     if "VAULT_AUTH_MOUNT_POINT" in os.environ:
         _vault_auth_method_parameters["mount_point"] = os.environ[
             "VAULT_AUTH_MOUNT_POINT"
         ]
+    if getattr(settings.__config__, "vault_auth_mount_point", None) is not None:
+        _vault_auth_method_parameters["mount_point"] = settings.__config__.vault_auth_mount_point  # type: ignore
 
     _vault_token = _extract_vault_token(settings)
     if _vault_token is not None:
@@ -75,14 +75,14 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> HvacClient:
     if _vault_kubernetes_jwt is not None:
         # Kubernetes role
         kubernetes_role: Optional[SecretStr] = None
+        if "VAULT_KUBERNETES_ROLE" in os.environ:
+            kubernetes_role = SecretStr(os.environ["VAULT_KUBERNETES_ROLE"])
+
         if getattr(settings.__config__, "vault_kubernetes_role", None) is not None:
             if isinstance(settings.__config__.vault_kubernetes_role, SecretStr):  # type: ignore
                 kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
             else:
                 kubernetes_role = SecretStr(settings.__config__.vault_kubernetes_role)  # type: ignore
-
-        if "VAULT_KUBERNETES_ROLE" in os.environ:
-            kubernetes_role = SecretStr(os.environ["VAULT_KUBERNETES_ROLE"])
 
         if kubernetes_role is not None:
             hvac_client.auth_kubernetes(
@@ -112,7 +112,13 @@ def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
     _vault_role_id: Optional[str] = None
     _vault_secret_id: Optional[SecretStr] = None
 
-    # Load from BaseSettings.Config
+    # Load from environment
+    if "VAULT_ROLE_ID" in os.environ:
+        _vault_role_id = os.environ["VAULT_ROLE_ID"]
+    if "VAULT_SECRET_ID" in os.environ:
+        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
+
+    # Load (and eventually override) from BaseSettings.Config
     if getattr(settings.__config__, "vault_role_id", None) is not None:
         _vault_role_id = settings.__config__.vault_role_id  # type: ignore
     if getattr(settings.__config__, "vault_secret_id", None) is not None:
@@ -120,12 +126,6 @@ def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
             _vault_secret_id = settings.__config__.vault_secret_id  # type: ignore
         else:
             _vault_secret_id = SecretStr(settings.__config__.vault_secret_id)  # type: ignore
-
-    # Load (and eventually override) from environment
-    if "VAULT_ROLE_ID" in os.environ:
-        _vault_role_id = os.environ["VAULT_ROLE_ID"]
-    if "VAULT_SECRET_ID" in os.environ:
-        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
 
     if _vault_role_id is not None and _vault_secret_id is not None:
         return Approle(role_id=_vault_role_id, secret_id=_vault_secret_id)
@@ -136,6 +136,13 @@ def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
 def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
     """Extract Vault token from environment, from .vault-token file or from BaseSettings.Config"""
     _vault_token: SecretStr
+    if getattr(settings.__config__, "vault_token", None) is not None:
+        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
+            _vault_token = settings.__config__.vault_token  # type: ignore
+        else:
+            _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
+        return _vault_token
+
     if "VAULT_TOKEN" in os.environ:
         _vault_token = SecretStr(os.environ["VAULT_TOKEN"])
         return _vault_token
@@ -144,13 +151,6 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
         with open(Path.home() / ".vault-token") as token_file:
             _vault_token = SecretStr(token_file.read().strip())
             return _vault_token
-
-    if getattr(settings.__config__, "vault_token", None) is not None:
-        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
-            _vault_token = settings.__config__.vault_token  # type: ignore
-        else:
-            _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
-        return _vault_token
 
     return None
 

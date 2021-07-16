@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest import mock
 
-from pydantic import BaseSettings, SecretStr
 import pytest
+from pydantic import BaseSettings, SecretStr
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
@@ -72,7 +72,7 @@ def test_get_vault_client_namespace_priority(
     mocker: MockerFixture, monkeypatch: MonkeyPatch
 ) -> None:
     """
-    Environment variable VAULT_NAMESPACE should be preferred over value in Config class
+    Value in Config class should be preferred over environment variable VAULT_NAMESPACE
     """
 
     class Settings(BaseSettings):
@@ -90,7 +90,7 @@ def test_get_vault_client_namespace_priority(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
-        "https://vault.tld", namespace="some/namespace/from/environment"
+        "https://vault.tld", namespace="some/namespace/from/config"
     )
 
 
@@ -170,7 +170,7 @@ def test_get_vault_client_vault_token_priority_env_config(
     mocker: MockerFixture, monkeypatch: MonkeyPatch
 ) -> None:
     """
-    Environment variable VAULT_TOKEN should be preferred over value in Config class
+    Value in Config class should be preferred over environment variable VAULT_TOKEN
     """
 
     class Settings(BaseSettings):
@@ -188,7 +188,7 @@ def test_get_vault_client_vault_token_priority_env_config(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
-        "https://vault.tld", token="fake-token-from-environment"
+        "https://vault.tld", token="fake-token-from-config"
     )
 
 
@@ -218,10 +218,10 @@ def test_get_vault_client_vault_token_priority_env_file(
 
 
 def test_get_vault_client_vault_token_priority_file_config(
-    mocker: MockerFixture, monkeypatch: MonkeyPatch, mock_vault_token_from_file: str
+    mocker: MockerFixture, mock_vault_token_from_file: str
 ) -> None:
     """
-    .vault-token file should be preferred over value in Config class
+    Value in Config class should be preferred over .vault-token file
     """
 
     class Settings(BaseSettings):
@@ -237,7 +237,7 @@ def test_get_vault_client_vault_token_priority_file_config(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
-        "https://vault.tld", token=mock_vault_token_from_file
+        "https://vault.tld", token="fake-token-from-config"
     )
 
 
@@ -328,6 +328,10 @@ def test_get_vault_client_approle_in_environment_and_config(
 def test_get_vault_client_approle_priority_env_config(
     mocker: MockerFixture, monkeypatch: MonkeyPatch
 ) -> None:
+    """
+    Values in Config class should be preferred over environment variables VAULT_ROLE_ID and VAULT_SECRET_ID
+    """
+
     class Settings(BaseSettings):
         class Config:
             vault_url: str = "https://vault.tld"
@@ -346,7 +350,7 @@ def test_get_vault_client_approle_priority_env_config(
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
     vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
-        role_id="fake-role-id-from-env", secret_id="fake-secret-id-from-env"
+        role_id="fake-role-id-from-config", secret_id="fake-secret-id-from-config"
     )
 
 
@@ -404,6 +408,10 @@ def test_get_vault_client_approle_custom_auth_mount_point_in_environment(
 def test_get_vault_client_approle_custom_auth_mount_point_priority_env_config(
     mocker: MockerFixture, monkeypatch: MonkeyPatch
 ) -> None:
+    """
+    Value in Config class should be preferred over environment variable VAULT_AUTH_MOUNT_POINT
+    """
+
     class Settings(BaseSettings):
         class Config:
             vault_url: str = "https://vault.tld"
@@ -424,7 +432,7 @@ def test_get_vault_client_approle_custom_auth_mount_point_priority_env_config(
     vault_client_mock.return_value.auth.approle.login.assert_called_once_with(
         role_id="fake-role-id",
         secret_id="fake-secret-id",
-        mount_point="custom-approle-from-env",
+        mount_point="custom-approle-from-config",
     )
 
 
@@ -465,7 +473,7 @@ def test_get_vault_client_vault_url_priority(
     mocker: MockerFixture, monkeypatch: MonkeyPatch
 ) -> None:
     """
-    Environment variable VAULT_ADDR should be preferred over value in Config class
+    Value in Config class should be preferred over environment variable VAULT_ADDR
     """
 
     class Settings(BaseSettings):
@@ -481,7 +489,7 @@ def test_get_vault_client_vault_url_priority(
     )
 
     _get_authenticated_vault_client(settings)
-    vault_client_mock.assert_called_once_with("https://vault-from-environment.tld")
+    vault_client_mock.assert_called_once_with("https://vault-from-config.tld")
 
 
 def test_get_vault_client_with_no_vault_url_fails() -> None:
@@ -563,6 +571,10 @@ def test_get_vault_client_with_kubernetes_token_role_priority_env_config(
     mock_kubernetes_token_from_file: str,
     monkeypatch: MonkeyPatch,
 ) -> None:
+    """
+    Value in Config class should be preferred over environment variable VAULT_KUBERNETES_ROLE
+    """
+
     class Settings(BaseSettings):
         class Config:
             vault_url: str = "https://vault.tld"
@@ -579,7 +591,7 @@ def test_get_vault_client_with_kubernetes_token_role_priority_env_config(
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
     vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
-        "my-role-from-env", mock_kubernetes_token_from_file
+        "my-role-from-config", mock_kubernetes_token_from_file
     )
 
 
@@ -663,6 +675,10 @@ def test_get_vault_client_kubernetes_custom_auth_mount_point_priority_env_config
     mock_kubernetes_token_from_file: str,
     monkeypatch: MonkeyPatch,
 ) -> None:
+    """
+    Value in Config class should be preferred over environment variable VAULT_AUTH_MOUNT_POINT
+    """
+
     class Settings(BaseSettings):
         class Config:
             vault_url: str = "https://vault.tld"
@@ -682,5 +698,5 @@ def test_get_vault_client_kubernetes_custom_auth_mount_point_priority_env_config
     vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
         "my-role",
         mock_kubernetes_token_from_file,
-        mount_point="custom-kubernetes-from-env",
+        mount_point="custom-kubernetes-from-config",
     )

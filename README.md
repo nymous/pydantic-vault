@@ -110,8 +110,8 @@ Support is planned for GKE authentication methods.
 To authenticate using the [Approle auth method][vault-auth-approle], you need to pass a role ID and a secret ID to your Settings class.
 
 Pydantic-vault reads this information from the following sources (in descending order of priority):
-  - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
   - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.Config` class (`vault_secret_id` can be a `str` or a `SecretStr`)
+  - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
 
 You can also mix-and-match, e.g. write the role ID in your `Settings.Config` class and retrieve the secret ID from the environment at runtime.
 
@@ -149,8 +149,8 @@ class Settings(BaseSettings):
 To authenticate using the [Kubernetes auth method][vault-auth-kubernetes], you need to pass a role to your Settings class.
 
 Pydantic-vault reads this information from the following sources (in descending order of priority):
-  - the `VAULT_KUBERNETES_ROLE` environment variable
   - the `vault_kubernetes_role` configuration field in your `Settings.Config` class, which must be a `str`
+  - the `VAULT_KUBERNETES_ROLE` environment variable
 
 The Kubernetes service account token will be read from the file at `/var/run/secrets/kubernetes.io/serviceaccount/token`.
 
@@ -187,9 +187,9 @@ class Settings(BaseSettings):
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
 Pydantic-vault reads this token from the following sources (in descending order of priority):
+  - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
   - the `VAULT_TOKEN` environment variable
   - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-vault will transparently reuse its token)
-  - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
 
 Example:
 ```python
