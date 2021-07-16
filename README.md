@@ -6,9 +6,27 @@
 
 A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets from a [KV v2 secrets engine][vault-kv-v2] in Hashicorp [Vault][vault]
 
-↖️ *Hint: look at the table of contents up there! (<svg aria-hidden="true" viewBox="0 0 16 16" version="1.1" data-view-component="true" height="16" width="16" class="octicon octicon-list-unordered">
-    <path fill-rule="evenodd" d="M2 4a1 1 0 100-2 1 1 0 000 2zm3.75-1.5a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5zm0 5a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5zm0 5a.75.75 0 000 1.5h8.5a.75.75 0 000-1.5h-8.5zM3 8a1 1 0 11-2 0 1 1 0 012 0zm-1 6a1 1 0 100-2 1 1 0 000 2z"></path>
-</svg> icon above the Readme on GitHub)*
+<!-- toc -->
+
+- [Getting started](#getting-started)
+- [Documentation](#documentation)
+  * [`Field` additional parameters](#field-additional-parameters)
+  * [Configuration](#configuration)
+  * [Authentication](#authentication)
+    + [Approle](#approle)
+    + [Kubernetes](#kubernetes)
+    + [Vault token](#vault-token)
+  * [Order of priority](#order-of-priority)
+- [Examples](#examples)
+  * [Retrieve a secret from a KV v2 secret engine](#retrieve-a-secret-from-a-kv-v2-secret-engine)
+  * [Retrieve a whole secret at once](#retrieve-a-whole-secret-at-once)
+  * [Retrieve a secret from a KV v1 secret engine](#retrieve-a-secret-from-a-kv-v1-secret-engine)
+  * [Retrieve a secret from a database secret engine](#retrieve-a-secret-from-a-database-secret-engine)
+- [Known limitations](#known-limitations)
+- [Inspirations](#inspirations)
+- [License](#license)
+
+<!-- tocstop -->
 
 ## Getting started
 
@@ -22,11 +40,18 @@ import os
 from pydantic import BaseSettings, Field, SecretStr
 from pydantic_vault import vault_config_settings_source
 
+
 class Settings(BaseSettings):
     # The `vault_secret_path` is the full path (with mount point included) to the secret
     # The `vault_secret_key` is the specific key to extract from a secret
-    username: str = Field(..., vault_secret_path="secret/data/path/to/secret", vault_secret_key="my_user")
-    password: SecretStr = Field(..., vault_secret_path="secret/data/path/to/secret", vault_secret_key="my_password")
+    username: str = Field(
+        ..., vault_secret_path="secret/data/path/to/secret", vault_secret_key="my_user"
+    )
+    password: SecretStr = Field(
+        ...,
+        vault_secret_path="secret/data/path/to/secret",
+        vault_secret_key="my_password",
+    )
 
     class Config:
         vault_url: str = "https://vault.tld"
@@ -35,18 +60,19 @@ class Settings(BaseSettings):
 
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
             # This is where you can choose which settings sources to use and their priority
             return (
                 init_settings,
                 env_settings,
                 vault_config_settings_source,
-                file_secret_settings
+                file_secret_settings,
             )
+
 
 settings = Settings()
 # These variables will come from the Vault secret you configured
@@ -80,7 +106,9 @@ The additional parameters Pydantic-Vault uses are:
 For example, if you create a secret `database/prod` with a key `password` and a value of `a secret password` in a KV v2 secret engine mounted at the default `secret/` location, you would access it with
 
 ```python
-password: SecretStr = Field(..., vault_secret_path="secret/data/database/prod", vault_secret_key="password")
+password: SecretStr = Field(
+    ..., vault_secret_path="secret/data/database/prod", vault_secret_key="password"
+)
 ```
 
 ### Configuration
@@ -120,9 +148,14 @@ Example:
 from pydantic import BaseSettings, Field, SecretStr
 from pydantic_vault import vault_config_settings_source
 
+
 class Settings(BaseSettings):
-    username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
-    password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
+    username: str = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
+    )
 
     class Config:
         vault_url: str = "https://vault.tld"
@@ -131,16 +164,16 @@ class Settings(BaseSettings):
 
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
             return (
                 init_settings,
                 env_settings,
                 vault_config_settings_source,
-                file_secret_settings
+                file_secret_settings,
             )
 ```
 
@@ -159,9 +192,14 @@ Example:
 from pydantic import BaseSettings, Field, SecretStr
 from pydantic_vault import vault_config_settings_source
 
+
 class Settings(BaseSettings):
-    username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
-    password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
+    username: str = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
+    )
 
     class Config:
         vault_url: str = "https://vault.tld"
@@ -169,16 +207,16 @@ class Settings(BaseSettings):
 
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
             return (
                 init_settings,
                 env_settings,
                 vault_config_settings_source,
-                file_secret_settings
+                file_secret_settings,
             )
 ```
 
@@ -196,9 +234,14 @@ Example:
 from pydantic import BaseSettings, Field, SecretStr
 from pydantic_vault import vault_config_settings_source
 
+
 class Settings(BaseSettings):
-    username: str = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_user")
-    password: SecretStr = Field(..., vault_secret_path="path/to/secret", vault_secret_key="my_password")
+    username: str = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
+    )
 
     class Config:
         vault_url: str = "https://vault.tld"
@@ -206,16 +249,16 @@ class Settings(BaseSettings):
 
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
             return (
                 init_settings,
                 env_settings,
                 vault_config_settings_source,
-                file_secret_settings
+                file_secret_settings,
             )
 ```
 
@@ -228,6 +271,7 @@ Here are some examples:
 from pydantic import BaseSettings
 from pydantic_vault import vault_config_settings_source
 
+
 class Settings(BaseSettings):
     """
     In descending order of priority:
@@ -237,19 +281,20 @@ class Settings(BaseSettings):
       - variables loaded from the secrets directory, such as Docker Secrets
       - the default field values for the `Settings` model
     """
+
     class Config:
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
             return (
                 init_settings,
                 env_settings,
                 vault_config_settings_source,
-                file_secret_settings
+                file_secret_settings,
             )
 
 
@@ -263,19 +308,16 @@ class Settings(BaseSettings):
     Here we chose to remove the "init arguments" source,
     and move the Vault source up before the environment source
     """
+
     class Config:
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
-            return (
-                vault_config_settings_source,
-                env_settings,
-                file_secret_settings
-            )
+            return (vault_config_settings_source, env_settings, file_secret_settings)
 ```
 
 ## Examples
@@ -285,10 +327,13 @@ All examples use the following structure, so we will omit the imports and the `C
 from pydantic import BaseSettings, Field, SecretStr
 from pydantic_vault import vault_config_settings_source
 
+
 class Settings(BaseSettings):
     ###############################################
     # THIS PART CHANGES IN THE DIFFERENT EXAMPLES #
-    username: str = Field(..., vault_secret_path="secret/data/path/to/secret", vault_secret_key="my_user")
+    username: str = Field(
+        ..., vault_secret_path="secret/data/path/to/secret", vault_secret_key="my_user"
+    )
     ###############################################
 
     class Config:
@@ -296,16 +341,16 @@ class Settings(BaseSettings):
 
         @classmethod
         def customise_sources(
-                cls,
-                init_settings,
-                env_settings,
-                file_secret_settings,
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
         ):
             return (
                 init_settings,
                 env_settings,
                 vault_config_settings_source,
-                file_secret_settings
+                file_secret_settings,
             )
 ```
 
@@ -327,8 +372,15 @@ class Settings(BaseSettings):
     # the secret actual path, eg. if your mount point is `secret/` (the default) and your secret
     # path is `my-api/prod`, the full path to use is `secret/data/my-api/prod`.
     # The `vault_secret_key` is the specific key to extract from a secret.
-    username: str = Field(..., vault_secret_path="secret/data/my-api/prod", vault_secret_key="root_user")
-    password: SecretStr = Field(..., vault_secret_path="secret/data/my-api/prod", vault_secret_key="root_password")
+    username: str = Field(
+        ..., vault_secret_path="secret/data/my-api/prod", vault_secret_key="root_user"
+    )
+    password: SecretStr = Field(
+        ...,
+        vault_secret_path="secret/data/my-api/prod",
+        vault_secret_key="root_password",
+    )
+
 
 settings = Settings()
 
@@ -359,6 +411,7 @@ class Settings(BaseSettings):
     # We don't pass a `vault_secret_key` here so that Pydantic-Vault fetches all fields at once.
     credentials: dict = Field(..., vault_secret_path="secret/data/my-api/prod")
 
+
 settings = Settings()
 settings.credentials  # { "root_user": "root", "root_password": "a_v3ry_s3cur3_p4ssw0rd" }
 ```
@@ -369,6 +422,7 @@ class Credentials(BaseModel):
     root_user: str
     root_password: SecretStr
 
+
 class Settings(BaseSettings):
     # The `vault_secret_path` is the full path (with mount point included) to the secret.
     # For a KV v2 secret engine, there is always a `data/` sub-path between the mount point and
@@ -376,6 +430,7 @@ class Settings(BaseSettings):
     # path is `my-api/prod`, the full path to use is `secret/data/my-api/prod`.
     # We don't pass a `vault_secret_key` here so that Pydantic-Vault fetches all fields at once.
     credentials: Credentials = Field(..., vault_secret_path="secret/data/my-api/prod")
+
 
 settings = Settings()
 settings.credentials.root_user  # "root"
@@ -400,8 +455,13 @@ class Settings(BaseSettings):
     # eg. if your mount point is `kv/` (the default) and your secret path is `my-api/prod`,
     # the full path to use is `kv/my-api/prod` (unlike with KV v2 secret engines).
     # The `vault_secret_key` is the specific key to extract from a secret.
-    username: str = Field(..., vault_secret_path="kv/my-api/prod", vault_secret_key="root_user")
-    password: SecretStr = Field(..., vault_secret_path="kv/my-api/prod", vault_secret_key="root_password")
+    username: str = Field(
+        ..., vault_secret_path="kv/my-api/prod", vault_secret_key="root_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path="kv/my-api/prod", vault_secret_key="root_password"
+    )
+
 
 settings = Settings()
 
@@ -435,6 +495,7 @@ class Settings(BaseSettings):
     # You must *not* pass a `vault_secret_key` so that Pydantic-Vault fetches both fields at once.
     db_creds: DbCredentials = Field(..., vault_secret_path="database/creds/my-db-prod")
     db_creds_in_dict: dict = Field(..., vault_secret_path="database/creds/my-db-prod")
+
 
 settings = Settings()
 

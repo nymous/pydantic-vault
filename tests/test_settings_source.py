@@ -1,13 +1,12 @@
 from typing import Any, Dict, List
-
-from pydantic.env_settings import SettingsError
-from typing_extensions import TypedDict
 from unittest.mock import MagicMock
 
-from hvac.exceptions import VaultError
-from pydantic import BaseSettings, Field, SecretStr, BaseModel
 import pytest
+from hvac.exceptions import VaultError
+from pydantic import BaseModel, BaseSettings, Field, SecretStr
+from pydantic.env_settings import SettingsError
 from pytest_mock import MockerFixture
+from typing_extensions import TypedDict
 
 from pydantic_vault import vault_config_settings_source
 

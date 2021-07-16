@@ -2,7 +2,7 @@ import logging
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, Optional, Any, NamedTuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Union
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError

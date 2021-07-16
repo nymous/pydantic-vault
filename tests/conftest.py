@@ -1,6 +1,6 @@
 import pytest
-from pytest import MonkeyPatch
 from pyfakefs.fake_filesystem import FakeFilesystem
+from pytest import MonkeyPatch
 
 
 @pytest.fixture(autouse=True)
