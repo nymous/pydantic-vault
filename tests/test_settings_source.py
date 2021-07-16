@@ -1,4 +1,6 @@
 from typing import Any, Dict, List
+
+from pydantic.env_settings import SettingsError
 from typing_extensions import TypedDict
 from unittest.mock import MagicMock
 
@@ -55,6 +57,9 @@ def fake_vault(path: str) -> VaultDataWrapper:
         },
         "secret/data/nested/path": {
             "data": {"metadata": {}, "data": {"username": "kvv2_nested_username"}}
+        },
+        "secret/data/bad_json": {
+            "data": {"metadata": {}, "data": {"bad_json": "{this is not a valid JSON}"}}
         },
     }
     try:
@@ -263,3 +268,19 @@ def test_get_secret_in_data_key() -> None:
         "kvv2_data_with_key": {"kvv2_nested_key": "kvv2_nested_value"},
         "kvv2_data_without_key": {"data": {"kvv2_nested_key": "kvv2_nested_value"}},
     }
+
+
+def test_get_secret_bad_json() -> None:
+    class Settings(BaseSettings):
+        bad_json: Dict[str, Any] = Field(
+            {}, vault_secret_path="secret/data/bad_json", vault_secret_key="bad_json"
+        )
+
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_token: SecretStr = SecretStr("fake-token")
+
+    settings = Settings()
+
+    with pytest.raises(SettingsError):
+        vault_config_settings_source(settings)

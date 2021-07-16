@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest import mock
 
 from pydantic import BaseSettings, SecretStr
 import pytest
@@ -102,10 +103,13 @@ def test_get_vault_client_with_vault_token_in_config(mocker: MockerFixture) -> N
 
     settings: BaseSettings = Settings()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
-
-    _get_authenticated_vault_client(settings)
-    vault_client_mock.assert_called_once_with("https://vault.tld", token="fake-token")
+    with mock.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    ) as vault_client_mock:
+        _get_authenticated_vault_client(settings)
+        vault_client_mock.assert_called_once_with(
+            "https://vault.tld", token="fake-token"
+        )
 
     # vault_token is a SecretStr, we will need to unwrap it
     class SettingsWithSecretToken(BaseSettings):
@@ -115,10 +119,13 @@ def test_get_vault_client_with_vault_token_in_config(mocker: MockerFixture) -> N
 
     settings = SettingsWithSecretToken()
 
-    vault_client_mock = mocker.patch("pydantic_vault.vault_settings.HvacClient")
-
-    _get_authenticated_vault_client(settings)
-    vault_client_mock.assert_called_once_with("https://vault.tld", token="fake-token")
+    with mock.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    ) as vault_client_mock:
+        _get_authenticated_vault_client(settings)
+        vault_client_mock.assert_called_once_with(
+            "https://vault.tld", token="fake-token"
+        )
 
 
 def test_get_vault_client_with_vault_token_in_token_file(
@@ -491,22 +498,40 @@ def test_get_vault_client_with_no_vault_url_fails() -> None:
 def test_get_vault_client_with_kubernetes_token_role_in_config(
     mocker: MockerFixture, mock_kubernetes_token_from_file: str
 ) -> None:
+    # vault_kubernetes_role is a str
     class Settings(BaseSettings):
         class Config:
             vault_url: str = "https://vault.tld"
             vault_kubernetes_role: str = "my-role"
 
-    settings = Settings()
+    settings: BaseSettings = Settings()
 
-    vault_client_mock = mocker.patch(
+    with mock.patch(
         "pydantic_vault.vault_settings.HvacClient", autospec=True
-    )
+    ) as vault_client_mock:
 
-    _get_authenticated_vault_client(settings)
-    vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
-        "my-role", mock_kubernetes_token_from_file
-    )
+        _get_authenticated_vault_client(settings)
+        vault_client_mock.assert_called_once_with("https://vault.tld")
+        vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+            "my-role", mock_kubernetes_token_from_file
+        )
+
+    # vault_kubernetes_role is a SecretStr, we will need to unwrap it
+    class SettingsWithSecretStr(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_kubernetes_role: SecretStr = SecretStr("my-role")
+
+    settings = SettingsWithSecretStr()
+
+    with mock.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    ) as vault_client_mock:
+        _get_authenticated_vault_client(settings)
+        vault_client_mock.assert_called_once_with("https://vault.tld")
+        vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+            "my-role", mock_kubernetes_token_from_file
+        )
 
 
 def test_get_vault_client_with_kubernetes_token_role_in_environment(
