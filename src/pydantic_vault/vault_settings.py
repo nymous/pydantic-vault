@@ -2,7 +2,7 @@ import logging
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict, Optional, Any, NamedTuple
+from typing import Dict, Optional, Any, NamedTuple, Union
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
@@ -167,45 +167,57 @@ def _extract_kubernetes() -> Optional[SecretStr]:
 
 
 def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
-    d: Dict[str, Optional[str]] = {}
+    d: Dict[str, Any] = {}
 
     vault_client = _get_authenticated_vault_client(settings)
 
     # Get secrets
     for field in settings.__fields__.values():
-        vault_val: Optional[str] = None
+        vault_val: Union[str, Dict[str, Any]]
 
-        vault_secret_path = field.field_info.extra.get("vault_secret_path")
-        vault_secret_key = field.field_info.extra.get("vault_secret_key")
+        vault_secret_path: Optional[str] = field.field_info.extra.get(
+            "vault_secret_path"
+        )
+        vault_secret_key: Optional[str] = field.field_info.extra.get("vault_secret_key")
 
-        if vault_secret_path is None or vault_secret_key is None:
+        if vault_secret_path is None:
             logging.debug(f"Skipping field {field.name}")
             continue
 
-        vault_secret_mount_point = getattr(
-            settings.__config__, "vault_secret_mount_point", None
-        )
-
-        read_secret_parameters: HvacReadSecretParameters = {"path": vault_secret_path}
-        if vault_secret_mount_point is not None:
-            read_secret_parameters["mount_point"] = vault_secret_mount_point
-
         try:
-            vault_val = vault_client.secrets.kv.v2.read_secret_version(
-                **read_secret_parameters
-            )["data"]["data"][vault_secret_key]
+            vault_api_response = vault_client.read(vault_secret_path)["data"]
         except VaultError:
-            logging.info(
-                f'could not get secret "{vault_secret_path}:{vault_secret_key}"'
-            )
+            logging.info(f'could not get secret "{vault_secret_path}"')
             continue
 
-        if field.is_complex():
+        if vault_secret_key is None:
+            try:
+                vault_val = vault_api_response["data"]
+            except KeyError:
+                vault_val = vault_api_response
+        else:
+            try:
+                vault_val = vault_api_response["data"][vault_secret_key]
+            except KeyError:
+                try:
+                    vault_val = vault_api_response[vault_secret_key]
+                except KeyError:
+                    logging.info(
+                        f'could not get key "{vault_secret_key}" in secret "{vault_secret_path}"'
+                    )
+                    continue
+
+        if field.is_complex() and not isinstance(
+            vault_val, dict
+        ):  # If it is already a dict we can load it in Pydantic
             try:
                 vault_val = settings.__config__.json_loads(vault_val)  # type: ignore
             except ValueError as e:
+                secret_full_path = vault_secret_path
+                if vault_secret_key is not None:
+                    secret_full_path += f":{vault_secret_key}"
                 raise SettingsError(
-                    f'error parsing JSON for "{vault_secret_path}:{vault_secret_key}'
+                    f'error parsing JSON for "{secret_full_path}"'
                 ) from e
 
         d[field.alias] = vault_val
