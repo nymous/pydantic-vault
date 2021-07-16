@@ -116,16 +116,21 @@ def test_do_not_search_vault_for_keys_not_configured() -> None:
     assert vault_settings_dict == {"field_from_vault": "kvv2_password"}
 
 
-def test_do_not_override_keys_not_found() -> None:
+def test_do_not_override_default_value_if_secret_is_not_found() -> None:
     class Settings(BaseSettings):
         field_from_vault: str = Field(
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
         )
-        field_not_found: str = Field(
+        path_not_found: str = Field(
             "default_value",
             vault_secret_path="not/found",
+            vault_secret_key="does_not_matter",
+        )
+        key_not_found: str = Field(
+            "default_value",
+            vault_secret_path="secret/data/first_level_key",
             vault_secret_key="does_not_exist",
         )
 
@@ -137,9 +142,11 @@ def test_do_not_override_keys_not_found() -> None:
 
     vault_settings_dict = vault_config_settings_source(settings)
     assert "field_from_vault" in vault_settings_dict
-    assert "field_not_found" not in vault_settings_dict
+    assert "path_not_found" not in vault_settings_dict
+    assert "key_not_found" not in vault_settings_dict
 
-    assert settings.field_not_found == "default_value"
+    assert settings.path_not_found == "default_value"
+    assert settings.key_not_found == "default_value"
 
 
 def test_get_secret_without_key() -> None:
