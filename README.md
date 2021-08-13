@@ -17,6 +17,7 @@ A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings]
     + [Kubernetes](#kubernetes)
     + [Vault token](#vault-token)
   * [Order of priority](#order-of-priority)
+- [Logging](#logging)
 - [Examples](#examples)
   * [Retrieve a secret from a KV v2 secret engine](#retrieve-a-secret-from-a-kv-v2-secret-engine)
   * [Retrieve a whole secret at once](#retrieve-a-whole-secret-at-once)
@@ -318,6 +319,19 @@ class Settings(BaseSettings):
             file_secret_settings,
         ):
             return (vault_config_settings_source, env_settings, file_secret_settings)
+```
+
+## Logging
+
+The library exports a logger called `pydantic-vault`.
+
+To help debugging you can change the log level. A simple way to do that if you do not have a custom log setup is:
+```py
+# At the beginning of your main file or entrypoint
+import logging
+
+logging.basicConfig()
+logging.getLogger("pydantic-vault").setLevel(logging.DEBUG)  # Change the log level here
 ```
 
 ## Examples

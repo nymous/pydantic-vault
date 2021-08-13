@@ -1,6 +1,8 @@
+import logging
+
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
-from pytest import MonkeyPatch
+from pytest import LogCaptureFixture, MonkeyPatch
 
 
 @pytest.fixture(autouse=True)
@@ -15,3 +17,8 @@ def clean_env(monkeypatch: MonkeyPatch) -> None:
 @pytest.fixture(autouse=True)
 def mock_filesystem(fs: FakeFilesystem) -> None:
     pass
+
+
+@pytest.fixture(autouse=True)
+def set_log_level(caplog: LogCaptureFixture) -> None:
+    caplog.set_level(logging.DEBUG)
