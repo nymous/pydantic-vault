@@ -236,7 +236,7 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
 
     vault_client = _get_authenticated_vault_client(settings)
     if vault_client is None:
-        logger.info("Could not find a suitable authentication method for Vault")
+        logger.warning("Could not find a suitable authentication method for Vault")
         return {}
 
     # Get secrets

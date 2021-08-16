@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
@@ -5,6 +6,7 @@ import pytest
 from hvac.exceptions import VaultError
 from pydantic import BaseModel, BaseSettings, Field, SecretStr
 from pydantic.env_settings import SettingsError
+from pytest import LogCaptureFixture
 from pytest_mock import MockerFixture
 from typing_extensions import TypedDict
 
@@ -283,3 +285,23 @@ def test_get_secret_bad_json() -> None:
 
     with pytest.raises(SettingsError):
         vault_config_settings_source(settings)
+
+
+def test_log_warning_if_no_authentication_found(caplog: LogCaptureFixture) -> None:
+    class Settings(BaseSettings):
+        username: str = Field(
+            "doesn't matter",
+            vault_secret_path="secret/data/first_level_key",
+            vault_secret_key="username",
+        )
+
+        class Config:
+            vault_url: str = "https://vault.tld"
+
+    settings = Settings()
+
+    vault_config_settings_source(settings)
+
+    # fmt: off
+    assert ("pydantic-vault", logging.WARNING, "Could not find a suitable authentication method for Vault") in caplog.record_tuples
+    # fmt: on
