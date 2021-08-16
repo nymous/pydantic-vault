@@ -5,11 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.7.0] - 2021-08-16
+Let's drop the "beta" version marker!
+
 ### Added
 - Log discovered configuration to help debugging, see the "Logging" section in the Readme
 
 ### Changed
 - Bump minimum `hvac` version to 0.10.6 instead of 0.10.0, to actually support AppRole authentication, and support the recently released 0.11.0
+- Clarify documentation about authentication methods priority, and document a workaround for Pydantic big file size
 
 
 ## [0.6.0b0] - 2021-07-16
@@ -85,7 +91,8 @@ This release has been YANKED because of a bad deployment
 ### Added
 - First alpha release
 
-[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.6.0b0...HEAD
+[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/nymous/pydantic-vault/compare/0.6.0a0...0.7.0
 [0.6.0b0]: https://github.com/nymous/pydantic-vault/compare/0.5.0a0...0.6.0b0
 [0.5.0a0]: https://github.com/nymous/pydantic-vault/compare/0.4.1a1...0.5.0a0
 [0.4.1a1]: https://github.com/nymous/pydantic-vault/compare/0.4.1a0...0.4.1a1
