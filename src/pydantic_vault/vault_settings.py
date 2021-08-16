@@ -108,33 +108,22 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
 
     hvac_client = HvacClient(_vault_url, **hvac_parameters)
 
-    _vault_kubernetes_jwt = _extract_kubernetes()
-    if _vault_kubernetes_jwt is not None:
-        # Kubernetes role
-        kubernetes_role: Optional[str] = None
-        if "VAULT_KUBERNETES_ROLE" in os.environ:
-            kubernetes_role = os.environ["VAULT_KUBERNETES_ROLE"]
-            logger.debug(
-                f"Found Kubernetes role '{kubernetes_role}' in environment variables"
+    _vault_kubernetes = _extract_kubernetes(settings)
+    if _vault_kubernetes is not None:
+        hvac_client.auth.kubernetes.login(
+            _vault_kubernetes.role,
+            _vault_kubernetes.jwt_token.get_secret_value(),
+            **_vault_auth_method_parameters,
+        )
+        logger.info(
+            _format_vault_client_auth_log(
+                _vault_url,
+                "Kubernetes",
+                _vault_namespace,
+                {"kubernetes_role": _vault_kubernetes.role},
             )
-        if getattr(settings.__config__, "vault_kubernetes_role", None) is not None:
-            kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
-            logger.debug(f"Found Kubernetes role '{kubernetes_role}' in Config")
-        if kubernetes_role is not None:
-            hvac_client.auth.kubernetes.login(
-                kubernetes_role,
-                _vault_kubernetes_jwt.get_secret_value(),
-                **_vault_auth_method_parameters,
-            )
-            logger.info(
-                _format_vault_client_auth_log(
-                    _vault_url,
-                    "Kubernetes",
-                    _vault_namespace,
-                    {"kubernetes_role": kubernetes_role},
-                )
-            )
-            return hvac_client
+        )
+        return hvac_client
 
     _vault_approle = _extract_approle(settings)
     if _vault_approle is not None:
@@ -217,8 +206,13 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
     return None
 
 
-def _extract_kubernetes() -> Optional[SecretStr]:
-    """Extract Kubernetes token from default file"""
+class Kubernetes(NamedTuple):
+    role: str
+    jwt_token: SecretStr
+
+
+def _extract_kubernetes(settings: BaseSettings) -> Optional[Kubernetes]:
+    """Extract Kubernetes token from default file, and role from environment or from BaseSettings.Config"""
     _kubernetes_jwt: SecretStr
     with suppress(FileNotFoundError):
         with open("/var/run/secrets/kubernetes.io/serviceaccount/token") as token_file:
@@ -226,7 +220,20 @@ def _extract_kubernetes() -> Optional[SecretStr]:
             logger.debug(
                 "Found Kubernetes JWT Token in file '/var/run/secrets/kubernetes.io/serviceaccount/token'"
             )
-            return _kubernetes_jwt
+
+        # Kubernetes role
+        kubernetes_role: Optional[str] = None
+        if "VAULT_KUBERNETES_ROLE" in os.environ:
+            kubernetes_role = os.environ["VAULT_KUBERNETES_ROLE"]
+            logger.debug(
+                f"Found Kubernetes role '{kubernetes_role}' in environment variables"
+            )
+        if getattr(settings.__config__, "vault_kubernetes_role", None) is not None:
+            kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
+            logger.debug(f"Found Kubernetes role '{kubernetes_role}' in Config")
+
+        if kubernetes_role is not None:
+            return Kubernetes(role=kubernetes_role, jwt_token=_kubernetes_jwt)
 
     return None
 
