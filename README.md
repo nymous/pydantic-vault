@@ -8,6 +8,7 @@ A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings]
 
 <!-- toc -->
 
+- [Installation](#installation)
 - [Getting started](#getting-started)
 - [Documentation](#documentation)
   * [`Field` additional parameters](#field-additional-parameters)
@@ -28,6 +29,16 @@ A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings]
 - [License](#license)
 
 <!-- tocstop -->
+
+## Installation
+
+```shell
+pip install pydantic-vault
+
+# or if you use Poetry or Pipenv
+poetry add pydantic-vault
+pipenv install pydantic-vault
+```
 
 ## Getting started
 
@@ -127,10 +138,16 @@ You can also configure everything available in the original Pydantic `BaseSettin
 
 ### Authentication
 
-For now Pydantic-Vault supports the following authentication method (in descending order of priority):
+Pydantic-Vault supports the following authentication method (in descending order of priority):
   - [direct token authentication][vault-auth-token]
   - [kubernetes][vault-auth-kubernetes]
   - [approle][vault-auth-approle]
+
+Pydantic-Vault tries to be transparent and help you work, both during local development and in production. It will try to
+find the required information for the first authentication method, if it can't it goes on to the next method, until it
+has exhausted all authentication methods. In this case it gives up and logs the failure.
+
+You only need to know this order of priority if you specify the authentication parameters for multiple methods.
 
 Support is planned for GKE authentication methods.
 
@@ -161,7 +178,7 @@ class Settings(BaseSettings):
     class Config:
         vault_url: str = "https://vault.tld"
         vault_role_id: str = "my-role-id"
-        vault_secret_id_id: SecretStr = SecretStr("my-secret-id")
+        vault_secret_id: SecretStr = SecretStr("my-secret-id")
 
         @classmethod
         def customise_sources(
@@ -520,6 +537,13 @@ settings.db_creds_in_dict["password"]  # "generated-password-for-username-2"
 ```
 
 ## Known limitations
+
+- Pydantic by default takes up ~80 MB, because it is compiled to a native extension and optimized for speed instead of file
+  size. If you don't rely much on Pydantic (you only use it for your app configuration with Pydantic-Vault, you parse/serialize
+  a low volume of JSON, your code is generally slow and Pydantic wouldn't be the bottleneck) you can use the flag
+  `--no-binary pydantic` when running `pip install` to install the pure-Python version instead of the compiled one (which
+  comes at less than 1 MB). You can also add the flag on its own line in your `requirements.txt`. See this discussion
+  https://github.com/samuelcolvin/pydantic/issues/2276 for more information.
 
 - On KV v1 secret engines, if your secret has a `data` key and you do not specify a `vault_secret_key`
 to load the whole secret at once, Pydantic-vault will only load the content of the `data` key.

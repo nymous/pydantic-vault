@@ -27,6 +27,7 @@ packages = [
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/nymous/pydantic-vault/issues"
+"Changelog" = "https://github.com/nymous/pydantic-vault/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
