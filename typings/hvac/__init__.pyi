@@ -10,8 +10,19 @@ class ApproleStub:
     ) -> Dict[str, Any]:
         raise NotImplementedError()
 
+class KubernetesStub:
+    @staticmethod
+    def login(
+        role: str,
+        jwt: str,
+        use_token: bool = True,
+        mount_point: str = "kubernetes",
+    ) -> Dict[str, Any]:
+        raise NotImplementedError()
+
 class AuthStub:
     approle: ApproleStub
+    kubernetes: KubernetesStub
 
 class Client:
     auth: AuthStub
@@ -24,14 +35,6 @@ class Client:
         allow_redirects: bool = True,
         namespace: Optional[str] = None,
     ) -> None:
-        raise NotImplementedError()
-    def auth_kubernetes(
-        self,
-        role: str,
-        jwt: str,
-        use_token: bool = True,
-        mount_point: str = "kubernetes",
-    ) -> Dict[str, Any]:
         raise NotImplementedError()
     def read(self, path: str) -> Dict[str, Any]:
         raise NotImplementedError()

@@ -121,7 +121,7 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
             kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
             logger.debug(f"Found Kubernetes role '{kubernetes_role}' in Config")
         if kubernetes_role is not None:
-            hvac_client.auth_kubernetes(
+            hvac_client.auth.kubernetes.login(
                 kubernetes_role,
                 _vault_kubernetes_jwt.get_secret_value(),
                 **_vault_auth_method_parameters,

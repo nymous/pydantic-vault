@@ -579,7 +579,7 @@ def test_get_vault_client_with_kubernetes_token_role_in_config(
 
         _get_authenticated_vault_client(settings)
         vault_client_mock.assert_called_once_with("https://vault.tld")
-        vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+        vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
             "my-role", mock_kubernetes_token_from_file
         )
     # fmt: off
@@ -609,7 +609,7 @@ def test_get_vault_client_with_kubernetes_token_role_in_environment(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+    vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
         "my-role-from-env", mock_kubernetes_token_from_file
     )
     # fmt: off
@@ -642,7 +642,7 @@ def test_get_vault_client_with_kubernetes_token_role_priority_env_config(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+    vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
         "my-role-from-config", mock_kubernetes_token_from_file
     )
 
@@ -666,7 +666,7 @@ def test_get_vault_client_kubernetes_custom_auth_mount_point_in_config(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+    vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
         "my-role",
         mock_kubernetes_token_from_file,
         mount_point="custom-kubernetes-from-config",
@@ -697,7 +697,7 @@ def test_get_vault_client_kubernetes_custom_auth_mount_point_in_environment(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+    vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
         "my-role",
         mock_kubernetes_token_from_file,
         mount_point="custom-kubernetes-from-env",
@@ -732,7 +732,7 @@ def test_get_vault_client_kubernetes_custom_auth_mount_point_priority_env_config
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+    vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
         "my-role",
         mock_kubernetes_token_from_file,
         mount_point="custom-kubernetes-from-config",
@@ -763,7 +763,7 @@ def test_get_vault_client_kubernetes_approle_priority(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld")
-    vault_client_mock.return_value.auth_kubernetes.assert_called_once_with(
+    vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(
         "my-role", mock_kubernetes_token_from_file
     )
     vault_client_mock.return_value.auth.approle.login.assert_not_called()
@@ -796,7 +796,7 @@ def test_get_vault_client_token_kubernetes_priority(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with("https://vault.tld", token="fake-token")
-    vault_client_mock.return_value.auth_kubernetes.assert_not_called()
+    vault_client_mock.return_value.auth.kubernetes.login.assert_not_called()
 
     # fmt: off
     assert ("pydantic-vault", logging.INFO, "Connecting to Vault 'https://vault.tld' with method 'Vault Token'") in caplog.record_tuples

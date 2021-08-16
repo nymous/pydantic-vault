@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Log discovered configuration to help debugging, see the "Logging" section in the Readme
 
 ### Changed
-- Bump minimum `hvac` version to 0.10.6 instead of 0.10.0, to actually support AppRole authentication
+- Bump minimum `hvac` version to 0.10.6 instead of 0.10.0, to actually support AppRole authentication, and support the recently released 0.11.0
 
 
 ## [0.6.0b0] - 2021-07-16
