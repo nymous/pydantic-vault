@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.7.1] - 2021-09-02
+### Changed
+- Better describe the project
+- Add an example for dynamic paths in secrets
+
+
 ## [0.7.0] - 2021-08-16
 Let's drop the "beta" version marker!
 
@@ -91,7 +97,8 @@ This release has been YANKED because of a bad deployment
 ### Added
 - First alpha release
 
-[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.7.1...HEAD
+[0.7.1]: https://github.com/nymous/pydantic-vault/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/nymous/pydantic-vault/compare/0.6.0a0...0.7.0
 [0.6.0b0]: https://github.com/nymous/pydantic-vault/compare/0.5.0a0...0.6.0b0
 [0.5.0a0]: https://github.com/nymous/pydantic-vault/compare/0.4.1a1...0.5.0a0
@@ -101,4 +108,3 @@ This release has been YANKED because of a bad deployment
 [0.3.0a0]: https://github.com/nymous/pydantic-vault/compare/0.2.0a0...0.3.0a0
 [0.2.0a0]: https://github.com/nymous/pydantic-vault/compare/0.1.0a0...0.2.0a0
 [0.1.0a0]: https://github.com/nymous/pydantic-vault/releases/tag/0.1.0a0
-
