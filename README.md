@@ -16,19 +16,20 @@ authentication for example).
 - [Installation](#installation)
 - [Getting started](#getting-started)
 - [Documentation](#documentation)
-  - [`Field` additional parameters](#field-additional-parameters)
-  - [Configuration](#configuration)
-  - [Authentication](#authentication)
-    - [Approle](#approle)
-    - [Kubernetes](#kubernetes)
-    - [Vault token](#vault-token)
-  - [Order of priority](#order-of-priority)
+  * [`Field` additional parameters](#field-additional-parameters)
+  * [Configuration](#configuration)
+  * [Authentication](#authentication)
+    + [Approle](#approle)
+    + [Kubernetes](#kubernetes)
+    + [Vault token](#vault-token)
+  * [Order of priority](#order-of-priority)
 - [Logging](#logging)
 - [Examples](#examples)
-  - [Retrieve a secret from a KV v2 secret engine](#retrieve-a-secret-from-a-kv-v2-secret-engine)
-  - [Retrieve a whole secret at once](#retrieve-a-whole-secret-at-once)
-  - [Retrieve a secret from a KV v1 secret engine](#retrieve-a-secret-from-a-kv-v1-secret-engine)
-  - [Retrieve a secret from a database secret engine](#retrieve-a-secret-from-a-database-secret-engine)
+  * [Retrieve a secret from a KV v2 secret engine](#retrieve-a-secret-from-a-kv-v2-secret-engine)
+  * [Retrieve a whole secret at once](#retrieve-a-whole-secret-at-once)
+  * [Retrieve a secret from a KV v1 secret engine](#retrieve-a-secret-from-a-kv-v1-secret-engine)
+  * [Retrieve a secret from a database secret engine](#retrieve-a-secret-from-a-database-secret-engine)
+  * [Use a dynamic path to retrieve secrets](#use-a-dynamic-path-to-retrieve-secrets)
 - [Known limitations](#known-limitations)
 - [Inspirations](#inspirations)
 - [License](#license)
@@ -544,6 +545,35 @@ settings.db_creds.username  # "generated-username-1"
 settings.db_creds.password.get_secret_value()  # "generated-password-for-username-1"
 settings.db_creds_in_dict["username"]  # "generated-username-2"
 settings.db_creds_in_dict["password"]  # "generated-password-for-username-2"
+```
+
+### Use a dynamic path to retrieve secrets
+
+If you have different paths for your secrets (for example if you have different environments) you can use string formatting
+to dynamically generate the paths depending on an environment variable.
+
+```python
+import os
+
+# You will need to specify the environment in an environment variable, but by
+# default it falls back to "dev"
+ENV = os.getenv("ENV", "dev")
+
+
+class Settings(BaseSettings):
+    # This will load different secrets depending on the value of the ENV environment variable
+    username: str = Field(
+        ..., vault_secret_path=f"kv/my-api/{ENV}", vault_secret_key="root_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path=f"kv/my-api/{ENV}", vault_secret_key="root_password"
+    )
+
+
+settings = Settings()
+
+settings.username  # "root"
+settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
 ```
 
 ## Known limitations
