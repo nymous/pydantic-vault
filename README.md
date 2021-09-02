@@ -4,7 +4,12 @@
 [![Check code](https://github.com/nymous/pydantic-vault/workflows/Check%20code/badge.svg)](https://github.com/nymous/pydantic-vault/actions/workflows/check_code.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets from a [KV v2 secrets engine][vault-kv-v2] in Hashicorp [Vault][vault]
+A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets stored in Hashicorp [Vault][vault]
+
+With Pydantic and Pydantic-Vault, you can easily declare your configuration in a type-hinted class, and load configuration
+from environment variables or Vault secrets. Pydantic-Vault will work the same when developing locally (where you probably
+login with the Vault CLI and your own user account) and when deploying in production (using a Vault Approle or Kubernetes
+authentication for example).
 
 <!-- toc -->
 
@@ -24,6 +29,7 @@ A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings]
   * [Retrieve a whole secret at once](#retrieve-a-whole-secret-at-once)
   * [Retrieve a secret from a KV v1 secret engine](#retrieve-a-secret-from-a-kv-v1-secret-engine)
   * [Retrieve a secret from a database secret engine](#retrieve-a-secret-from-a-database-secret-engine)
+  * [Use a dynamic path to retrieve secrets](#use-a-dynamic-path-to-retrieve-secrets)
 - [Known limitations](#known-limitations)
 - [Inspirations](#inspirations)
 - [License](#license)
@@ -42,7 +48,12 @@ pipenv install pydantic-vault
 
 ## Getting started
 
-Starting with Pydantic 1.8, [custom settings sources][pydantic-basesettings-customsource] are officially supported.
+With [Pydantic][pydantic] [`BaseSettings`][pydantic-basesettings] class, you can easily "create a clearly-defined, type-hinted
+application configuration class" that gets its configuration from environment variables. Starting with Pydantic 1.8,
+[custom settings sources][pydantic-basesettings-customsource] are officially supported. This is where Pydantic-Vault steps
+in, allowing you to load configuration values from Hashicorp Vault secrets. It will work the same when developing locally
+(where you probably login with the Vault CLI and your own user account) and when deploying in production (using a Vault
+Approle or Kubernetes authentication for example).
 
 You can create a normal `BaseSettings` class, and define the `customise_sources()` method to load secrets from your Vault instance using the `vault_config_settings_source` function:
 
@@ -534,6 +545,35 @@ settings.db_creds.username  # "generated-username-1"
 settings.db_creds.password.get_secret_value()  # "generated-password-for-username-1"
 settings.db_creds_in_dict["username"]  # "generated-username-2"
 settings.db_creds_in_dict["password"]  # "generated-password-for-username-2"
+```
+
+### Use a dynamic path to retrieve secrets
+
+If you have different paths for your secrets (for example if you have different environments) you can use string formatting
+to dynamically generate the paths depending on an environment variable.
+
+```python
+import os
+
+# You will need to specify the environment in an environment variable, but by
+# default it falls back to "dev"
+ENV = os.getenv("ENV", "dev")
+
+
+class Settings(BaseSettings):
+    # This will load different secrets depending on the value of the ENV environment variable
+    username: str = Field(
+        ..., vault_secret_path=f"kv/my-api/{ENV}", vault_secret_key="root_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path=f"kv/my-api/{ENV}", vault_secret_key="root_password"
+    )
+
+
+settings = Settings()
+
+settings.username  # "root"
+settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
 ```
 
 ## Known limitations
