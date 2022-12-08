@@ -261,7 +261,7 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
 
         try:
             vault_api_response = vault_client.read(vault_secret_path)["data"]
-        except VaultError:
+        except (TypeError, VaultError):
             logger.info(f'could not get secret "{vault_secret_path}"')
             continue
 
