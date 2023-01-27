@@ -37,10 +37,10 @@ class VaultParameterError(PydanticVaultException, ValueError):
 
 
 def _format_vault_client_auth_log(
-    vault_url: str,
-    vault_auth_method: str,
-    vault_namespace: Optional[str] = None,
-    additional_parameters: Optional[Dict[str, str]] = None,
+        vault_url: str,
+        vault_auth_method: str,
+        vault_namespace: Optional[str] = None,
+        additional_parameters: Optional[Dict[str, str]] = None,
 ) -> str:
     message = f"Connecting to Vault '{vault_url}'"
 
@@ -260,8 +260,11 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
             continue
 
         try:
-            vault_api_response = vault_client.read(vault_secret_path)["data"]
-        except (TypeError, VaultError):
+            vault_api_response = vault_client.read(vault_secret_path)
+            if vault_api_response is None:
+                raise VaultError
+            vault_api_response = vault_api_response["data"]
+        except VaultError:
             logger.info(f'could not get secret "{vault_secret_path}"')
             continue
 
@@ -283,7 +286,7 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
                     continue
 
         if field.is_complex() and not isinstance(
-            vault_val, dict
+                vault_val, dict
         ):  # If it is already a dict we can load it in Pydantic
             try:
                 vault_val = settings.__config__.json_loads(vault_val)  # type: ignore
