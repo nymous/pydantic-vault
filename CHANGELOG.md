@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.7.2] - 2023-02-07
+Thank you @ingvaldlorentzen for your contribution!
+
+### Fixed
+- Fix `TypeError` breaking Pydantic defaults when Vault returns `None` (#13)
+
+
 ## [0.7.1] - 2021-09-02
 ### Changed
 - Better describe the project
@@ -93,11 +100,12 @@ This release has been YANKED because of a bad deployment
 - Use the newly supported way of customizing settings sources, available since Pydantic 1.8
 
 
-## [0.1.0a0] - 2021-03-21
+## [0.1.0a0] - 2020-03-21
 ### Added
 - First alpha release
 
-[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.7.1...HEAD
+[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.7.2...HEAD
+[0.7.2]: https://github.com/nymous/pydantic-vault/compare/0.7.1...0.7.2
 [0.7.1]: https://github.com/nymous/pydantic-vault/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/nymous/pydantic-vault/compare/0.6.0a0...0.7.0
 [0.6.0b0]: https://github.com/nymous/pydantic-vault/compare/0.5.0a0...0.6.0b0
