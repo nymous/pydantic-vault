@@ -8,17 +8,17 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
+    - name: Install Poetry
+      run: |
+        pipx install poetry==1.3.2
+        poetry --version
+        poetry self show plugins
+        poetry config virtualenvs.in-project true
+
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
-
-    - name: Install Poetry
-      uses: snok/install-poetry@b67da837e42fb77252a06a3eb84cf0ccaad73aa9
-      with:
-        version: 1.1.5
-        virtualenvs-create: true
-        virtualenvs-in-project: true
 
     - name: Load cached dependencies
       id: cached-poetry-dependencies
