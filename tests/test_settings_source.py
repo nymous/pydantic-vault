@@ -50,7 +50,7 @@ def fake_vault(path: str) -> VaultDataWrapper:
                 },
             }
         },
-        "secret/data/first_level_key/not_found": None,
+        "secret/data/first_level_key/not_found": None,  # type: ignore[dict-item]
         "secret/data/secret_with_data_key": {
             "data": {
                 "metadata": {},
