@@ -50,6 +50,7 @@ def fake_vault(path: str) -> VaultDataWrapper:
                 },
             }
         },
+        "secret/data/first_level_key/not_found": None,  # type: ignore[dict-item]
         "secret/data/secret_with_data_key": {
             "data": {
                 "metadata": {},
@@ -134,6 +135,11 @@ def test_do_not_override_default_value_if_secret_is_not_found() -> None:
             vault_secret_path="not/found",
             vault_secret_key="does_not_matter",
         )
+        path_almost_found: str = Field(
+            "default_value",
+            vault_secret_path="secret/data/first_level_key/not_found",
+            vault_secret_key="does_not_exist",
+        )
         key_not_found: str = Field(
             "default_value",
             vault_secret_path="secret/data/first_level_key",
@@ -149,9 +155,11 @@ def test_do_not_override_default_value_if_secret_is_not_found() -> None:
     vault_settings_dict = vault_config_settings_source(settings)
     assert "field_from_vault" in vault_settings_dict
     assert "path_not_found" not in vault_settings_dict
+    assert "path_almost_found" not in vault_settings_dict
     assert "key_not_found" not in vault_settings_dict
 
     assert settings.path_not_found == "default_value"
+    assert settings.path_almost_found == "default_value"
     assert settings.key_not_found == "default_value"
 
 
