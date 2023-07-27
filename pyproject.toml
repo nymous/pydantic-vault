@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pydantic-vault"
-version = "0.7.2"
-description = "A simple extension to Pydantic BaseSettings that can retrieve secrets from Hashicorp Vault"
+version = "0.8.0"
+description = "A simple extension to pydantic-settings that can retrieve secrets from Hashicorp Vault"
 authors = ["Thomas Gaudin <thomas.gaudin@centraliens-lille.org>"]
 license = "MIT"
 readme = "README.md"
@@ -30,19 +30,18 @@ packages = [
 "Changelog" = "https://github.com/nymous/pydantic-vault/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
-pydantic = "^1.8"
+python = "^3.7"
+pydantic = "^2.1.1"
+pydantic-settings = "^2.0.2"
 hvac = ">=0.10.6, <0.12"
 
 [tool.poetry.dev-dependencies]
-black = "^21.7b0"
-mypy = "^0.910"
-pytest = "^6.2.4"
-pytest-mock = "^3.6.1"
-pyfakefs = "^4.5.0"
-pytest-cov = "^2.12.1"
-pre-commit = "^2.14.0"
-isort = "^5.9.3"
+mypy = "^1.4.1"
+pytest = "^7.4.0"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
+pyfakefs = "^5.2.3"
+pre-commit = "^2.21.0"
 
 [build-system]
 requires = ["poetry-core"]

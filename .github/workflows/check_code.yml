@@ -8,7 +8,7 @@ jobs:
   lint:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
 
     - name: Install Poetry
       run: |
@@ -17,14 +17,14 @@ jobs:
         poetry self show plugins
         poetry config virtualenvs.in-project true
 
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.6
+        python-version: 3.7
 
     - name: Load cached dependencies
       id: cached-poetry-dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -34,11 +34,8 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-interaction
 
-    - name: Check formatting with Black
-      run: poetry run black --check .
-
-    - name: Type check with Mypy
-      run: poetry run mypy
+    - name: Run linters
+      run: poetry run pre-commit run --all
 
     - name: Run tests
       run: poetry run pytest
