@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add support for authenticating via JWT tokens (e.g. Gitlab)
 
 ## [0.7.2] - 2023-02-07
 Thank you @ingvaldlorentzen for your contribution!
