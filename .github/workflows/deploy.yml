@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
 
       - name: Install Poetry
         run: |
@@ -17,10 +17,10 @@ jobs:
           poetry self show plugins
           poetry config virtualenvs.in-project true
 
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: 3.7
 
       - name: Publish on PyPi
         run: poetry publish --build

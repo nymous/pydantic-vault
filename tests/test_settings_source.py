@@ -4,13 +4,14 @@ from unittest.mock import MagicMock
 
 import pytest
 from hvac.exceptions import VaultError
-from pydantic import BaseModel, BaseSettings, Field, SecretStr
-from pydantic.env_settings import SettingsError
+from pydantic import BaseModel, Field, SecretStr
+from pydantic_settings import BaseSettings
+from pydantic_settings.sources import SettingsError
 from pytest import LogCaptureFixture
 from pytest_mock import MockerFixture
 from typing_extensions import TypedDict
 
-from pydantic_vault import vault_config_settings_source
+from pydantic_vault import VaultSettingsSource
 
 
 class VaultDataWrapper(TypedDict):
@@ -88,19 +89,18 @@ def test_get_vault_secrets() -> None:
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="username",
         )
-        password: SecretStr = Field(
+        password: SecretStr = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
-    settings = Settings()
-
-    vault_settings_dict = vault_config_settings_source(settings)
+    vault_settings_dict = VaultSettingsSource(Settings)()
     assert vault_settings_dict == {"username": "kvv2_user", "password": "kvv2_password"}
 
 
@@ -113,13 +113,12 @@ def test_do_not_search_vault_for_keys_not_configured() -> None:
             vault_secret_key="password",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
-    settings = Settings()
-
-    vault_settings_dict = vault_config_settings_source(settings)
+    vault_settings_dict = VaultSettingsSource(Settings)()
     assert vault_settings_dict == {"field_from_vault": "kvv2_password"}
 
 
@@ -146,13 +145,14 @@ def test_do_not_override_default_value_if_secret_is_not_found() -> None:
             vault_secret_key="does_not_exist",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
     settings = Settings()
 
-    vault_settings_dict = vault_config_settings_source(settings)
+    vault_settings_dict = VaultSettingsSource(Settings)()
     assert "field_from_vault" in vault_settings_dict
     assert "path_not_found" not in vault_settings_dict
     assert "path_almost_found" not in vault_settings_dict
@@ -169,7 +169,7 @@ def test_get_secret_without_key() -> None:
         password: SecretStr
 
     class Settings(BaseSettings):
-        db_credentials: DbCredentials = Field(
+        db_credentials: DbCredentials = Field(  # type: ignore
             {"username": "doesn't matter", "password": "doesn't matter"},
             vault_secret_path="database/creds/db_role",
         )
@@ -177,13 +177,12 @@ def test_get_secret_without_key() -> None:
             {}, vault_secret_path="secret/data/first_level_key"
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
-    settings = Settings()
-
-    vault_settings_dict = vault_config_settings_source(settings)
+    vault_settings_dict = VaultSettingsSource(Settings)()
     assert vault_settings_dict == {
         "db_credentials": {"username": "db_username", "password": "db_password"},
         "kvv2_secret": {
@@ -213,13 +212,12 @@ def test_get_secrets_from_different_mount_points() -> None:
             vault_secret_key="username",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
-    settings = Settings()
-
-    vault_settings_dict = vault_config_settings_source(settings)
+    vault_settings_dict = VaultSettingsSource(Settings)()
     assert vault_settings_dict == {
         "field_from_kvv1": "kvv1_value",
         "field_from_kvv2": "kvv2_user",
@@ -232,20 +230,19 @@ def test_get_secret_jsonified() -> None:
         list: List[int]
 
     class Settings(BaseSettings):
-        json_field: JsonField = Field(
+        json_field: JsonField = Field(  # type: ignore
             {"key": "doesn't matter", "list": []},
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="json_in_string",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
-    settings = Settings()
-
-    vault_settings_dict = vault_config_settings_source(settings)
-    assert vault_settings_dict == {"json_field": {"key": "value", "list": [1, 2, 3]}}
+    vault_settings_dict = VaultSettingsSource(Settings)()
+    assert vault_settings_dict == {"json_field": JsonField(key="value", list=[1, 2, 3])}
 
 
 def test_get_secret_in_data_key() -> None:
@@ -265,13 +262,12 @@ def test_get_secret_in_data_key() -> None:
             vault_secret_path="secret/data/secret_with_data_key",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
-    settings = Settings()
-
-    vault_settings_dict = vault_config_settings_source(settings)
+    vault_settings_dict = VaultSettingsSource(Settings)()
     assert vault_settings_dict == {
         "kvv1_data_with_key": {"kvv1_nested_key": "kvv1_nested_value"},
         "kvv2_data_with_key": {"kvv2_nested_key": "kvv2_nested_value"},
@@ -285,14 +281,13 @@ def test_get_secret_bad_json() -> None:
             {}, vault_secret_path="secret/data/bad_json", vault_secret_key="bad_json"
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
-            vault_token: SecretStr = SecretStr("fake-token")
-
-    settings = Settings()
+        model_config = {  # type: ignore
+            "vault_url": "https://vault.tld",
+            "vault_token": SecretStr("fake-token"),
+        }
 
     with pytest.raises(SettingsError):
-        vault_config_settings_source(settings)
+        VaultSettingsSource(Settings)()
 
 
 def test_log_warning_if_no_authentication_found(caplog: LogCaptureFixture) -> None:
@@ -303,12 +298,9 @@ def test_log_warning_if_no_authentication_found(caplog: LogCaptureFixture) -> No
             vault_secret_key="username",
         )
 
-        class Config:
-            vault_url: str = "https://vault.tld"
+        model_config = {"vault_url": "https://vault.tld"}  # type: ignore
 
-    settings = Settings()
-
-    vault_config_settings_source(settings)
+    VaultSettingsSource(Settings)()
 
     # fmt: off
     assert ("pydantic-vault", logging.WARNING, "Could not find a suitable authentication method for Vault") in caplog.record_tuples

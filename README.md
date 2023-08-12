@@ -55,13 +55,14 @@ in, allowing you to load configuration values from Hashicorp Vault secrets. It w
 (where you probably login with the Vault CLI and your own user account) and when deploying in production (using a Vault
 Approle or Kubernetes authentication for example).
 
-You can create a normal `BaseSettings` class, and define the `customise_sources()` method to load secrets from your Vault instance using the `vault_config_settings_source` function:
+You can create a normal `BaseSettings` class, and define the `settings_customise_sources()` method to load secrets from your Vault instance using the `VaultSettingsSource` class:
 
 ```python
 import os
 
-from pydantic import BaseSettings, Field, SecretStr
-from pydantic_vault import vault_config_settings_source
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from pydantic_vault import VaultSettingsSource
 
 
 class Settings(BaseSettings):
@@ -76,25 +77,29 @@ class Settings(BaseSettings):
         vault_secret_key="my_password",
     )
 
-    class Config:
-        vault_url: str = "https://vault.tld"
-        vault_token: SecretStr = os.environ["VAULT_TOKEN"]
-        vault_namespace: str = "your/namespace"  # Optional, pydantic-vault supports Vault namespaces (for Vault Enterprise)
+    model_config = {
+        "vault_url": "https://vault.tld",
+        "vault_token": os.environ["VAULT_TOKEN"],
+        "vault_namespace": "your/namespace",  # Optional, pydantic-vault supports Vault namespaces (for Vault Enterprise)
+    }
 
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        # This is where you can choose which settings sources to use and their priority
+        return (
             init_settings,
             env_settings,
+            dotenv_settings,
+            VaultSettingsSource(settings_cls),
             file_secret_settings,
-        ):
-            # This is where you can choose which settings sources to use and their priority
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-                file_secret_settings,
-            )
+        )
 
 
 settings = Settings()
@@ -136,11 +141,11 @@ password: SecretStr = Field(
 
 ### Configuration
 
-You can configure the behaviour of Pydantic-vault in your `Settings.Config` class, or using environment variables:
+You can configure the behaviour of Pydantic-vault in your `Settings.model_config` dict, or using environment variables:
 
 | Settings name              | Required | Environment variable | Description |
 |----------------------------|----------|----------------------|-------------|
-| `customise_sources()`      | **Yes**  | N/A                  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
+| `settings_customise_sources()`      | **Yes**  | N/A                  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
 | `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
 | `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
 | `vault_auth_mount_point`   | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point |
@@ -167,15 +172,16 @@ Support is planned for GKE authentication methods.
 To authenticate using the [Approle auth method][vault-auth-approle], you need to pass a role ID and a secret ID to your Settings class.
 
 Pydantic-vault reads this information from the following sources (in descending order of priority):
-  - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.Config` class (`vault_secret_id` can be a `str` or a `SecretStr`)
+  - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.model_config` dict (`vault_secret_id` can be a `str` or a `SecretStr`)
   - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
 
-You can also mix-and-match, e.g. write the role ID in your `Settings.Config` class and retrieve the secret ID from the environment at runtime.
+You can also mix-and-match, e.g. write the role ID in your `Settings.model_config` dict and retrieve the secret ID from the environment at runtime.
 
 Example:
 ```python
-from pydantic import BaseSettings, Field, SecretStr
-from pydantic_vault import vault_config_settings_source
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from pydantic_vault import VaultSettingsSource
 
 
 class Settings(BaseSettings):
@@ -186,24 +192,28 @@ class Settings(BaseSettings):
         ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
     )
 
-    class Config:
-        vault_url: str = "https://vault.tld"
-        vault_role_id: str = "my-role-id"
-        vault_secret_id: SecretStr = SecretStr("my-secret-id")
+    model_config = {
+        "vault_url": "https://vault.tld",
+        "vault_role_id": "my-role-id",
+        "vault_secret_id": SecretStr("my-secret-id"),
+    }
 
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
             init_settings,
             env_settings,
+            dotenv_settings,
+            VaultSettingsSource(settings_cls),
             file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-                file_secret_settings,
-            )
+        )
 ```
 
 #### Kubernetes
@@ -211,15 +221,16 @@ class Settings(BaseSettings):
 To authenticate using the [Kubernetes auth method][vault-auth-kubernetes], you need to pass a role to your Settings class.
 
 Pydantic-vault reads this information from the following sources (in descending order of priority):
-  - the `vault_kubernetes_role` configuration field in your `Settings.Config` class, which must be a `str`
+  - the `vault_kubernetes_role` configuration field in your `Settings.model_config` dict, which must be a `str`
   - the `VAULT_KUBERNETES_ROLE` environment variable
 
 The Kubernetes service account token will be read from the file at `/var/run/secrets/kubernetes.io/serviceaccount/token`.
 
 Example:
 ```python
-from pydantic import BaseSettings, Field, SecretStr
-from pydantic_vault import vault_config_settings_source
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from pydantic_vault import VaultSettingsSource
 
 
 class Settings(BaseSettings):
@@ -230,23 +241,27 @@ class Settings(BaseSettings):
         ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
     )
 
-    class Config:
-        vault_url: str = "https://vault.tld"
-        vault_kubernetes_role: str = "my-role"
+    model_config = {
+        "vault_url": "https://vault.tld",
+        "vault_kubernetes_role": "my-role",
+    }
 
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
             init_settings,
             env_settings,
+            dotenv_settings,
+            VaultSettingsSource(settings_cls),
             file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-                file_secret_settings,
-            )
+        )
 ```
 
 #### Vault token
@@ -254,14 +269,15 @@ class Settings(BaseSettings):
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
 Pydantic-vault reads this token from the following sources (in descending order of priority):
-  - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
+  - the `vault_token` configuration field in your `Settings.model_config` dict, which can be a `str` or a `SecretStr`
   - the `VAULT_TOKEN` environment variable
   - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-vault will transparently reuse its token)
 
 Example:
 ```python
-from pydantic import BaseSettings, Field, SecretStr
-from pydantic_vault import vault_config_settings_source
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from pydantic_vault import VaultSettingsSource
 
 
 class Settings(BaseSettings):
@@ -272,23 +288,27 @@ class Settings(BaseSettings):
         ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
     )
 
-    class Config:
-        vault_url: str = "https://vault.tld"
-        vault_token: SecretStr = SecretStr("my-secret-token")
+    model_config = {
+        "vault_url": "https://vault.tld",
+        "vault_token": SecretStr("my-secret-token"),
+    }
 
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
             init_settings,
             env_settings,
+            dotenv_settings,
+            VaultSettingsSource(settings_cls),
             file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-                file_secret_settings,
-            )
+        )
 ```
 
 ### Order of priority
@@ -297,8 +317,8 @@ Thanks to the new feature in Pydantic 1.8 that allows you to [customize settings
 
 Here are some examples:
 ```python
-from pydantic import BaseSettings
-from pydantic_vault import vault_config_settings_source
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from pydantic_vault import VaultSettingsSource
 
 
 class Settings(BaseSettings):
@@ -311,20 +331,22 @@ class Settings(BaseSettings):
       - the default field values for the `Settings` model
     """
 
-    class Config:
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
             init_settings,
             env_settings,
+            dotenv_settings,
+            VaultSettingsSource(settings_cls),
             file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-                file_secret_settings,
-            )
+        )
 
 
 class Settings(BaseSettings):
@@ -338,15 +360,21 @@ class Settings(BaseSettings):
     and move the Vault source up before the environment source
     """
 
-    class Config:
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            VaultSettingsSource(settings_cls),
             env_settings,
+            dotenv_settings,
             file_secret_settings,
-        ):
-            return (vault_config_settings_source, env_settings, file_secret_settings)
+        )
 ```
 
 ## Logging
@@ -364,10 +392,11 @@ logging.getLogger("pydantic-vault").setLevel(logging.DEBUG)  # Change the log le
 
 ## Examples
 
-All examples use the following structure, so we will omit the imports and the `Config` inner class:
+All examples use the following structure, so we will omit the imports and the `model_config` dict:
 ```python
-from pydantic import BaseSettings, Field, SecretStr
-from pydantic_vault import vault_config_settings_source
+from pydantic import Field
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+from pydantic_vault import VaultSettingsSource
 
 
 class Settings(BaseSettings):
@@ -378,22 +407,24 @@ class Settings(BaseSettings):
     )
     ###############################################
 
-    class Config:
-        vault_url: str = "https://vault.tld"
+    model_config = {"vault_url": "https://vault.tld"}
 
-        @classmethod
-        def customise_sources(
-            cls,
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
             init_settings,
             env_settings,
+            dotenv_settings,
+            VaultSettingsSource(settings_cls),
             file_secret_settings,
-        ):
-            return (
-                init_settings,
-                env_settings,
-                vault_config_settings_source,
-                file_secret_settings,
-            )
+        )
 ```
 
 ### Retrieve a secret from a KV v2 secret engine
@@ -617,9 +648,9 @@ to load the whole secret at once, Pydantic-vault will only load the content of t
 Pydantic-Vault is available under the [MIT license](./LICENSE).
 
 [ansible hashi_vault]: https://docs.ansible.com/ansible/latest/collections/community/hashi_vault/hashi_vault_lookup.html
-[pydantic]: https://pydantic-docs.helpmanual.io/
-[pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
-[pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
+[pydantic]: https://docs.pydantic.dev/latest/
+[pydantic-basesettings]: https://docs.pydantic.dev/latest/usage/pydantic_settings/
+[pydantic-basesettings-customsource]: https://docs.pydantic.dev/latest/usage/pydantic_settings/#adding-sources
 [vault]: https://www.vaultproject.io/
 [vault-action]: https://github.com/hashicorp/vault-action
 [vault-auth-approle]: https://www.vaultproject.io/docs/auth/approle
