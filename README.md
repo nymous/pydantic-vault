@@ -1,13 +1,14 @@
-# Pydantic-Vault
+![license](https://img.shields.io/pypi/l/pydantic-settings-vault?style=for-the-badge) ![python version](https://img.shields.io/pypi/pyversions/pydantic-settings-vault?style=for-the-badge) [![version](https://img.shields.io/pypi/v/pydantic-settings-vault?style=for-the-badge)](https://pypi.org/project/pydantic-settings-vault/) [![tests status](https://img.shields.io/github/actions/workflow/status/aleksey925/pydantic-settings-vault/test.yml?branch=master&style=for-the-badge)](https://github.com/aleksey925/pydantic-settings-vault/actions?query=branch%3Amaster) [![](https://img.shields.io/pypi/dm/pydantic-settings-vault?style=for-the-badge)](https://pypi.org/project/pydantic-settings-vault/)
 
-[![PyPI](https://img.shields.io/pypi/v/pydantic-vault)](https://pypi.org/project/pydantic-vault/)
-[![Check code](https://github.com/nymous/pydantic-vault/workflows/Check%20code/badge.svg)](https://github.com/nymous/pydantic-vault/actions/workflows/check_code.yml)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+pydantic-settings-vault
+=======================
 
-A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets stored in Hashicorp [Vault][vault]
+> `pydantic-settings-vault` is a fork `pydantic-vault` with `pydantic 2.x` support.
 
-With Pydantic and Pydantic-Vault, you can easily declare your configuration in a type-hinted class, and load configuration
-from environment variables or Vault secrets. Pydantic-Vault will work the same when developing locally (where you probably
+A simple extension to pydantic-settings that can retrieve secrets stored in Hashicorp Vault.
+
+With pydantic-settings and pydantic-settings-vault, you can easily declare your configuration in a type-hinted class, and load configuration
+from environment variables or Vault secrets. pydantic-settings-vault will work the same when developing locally (where you probably
 login with the Vault CLI and your own user account) and when deploying in production (using a Vault Approle or Kubernetes
 authentication for example).
 
@@ -39,21 +40,19 @@ authentication for example).
 ## Installation
 
 ```shell
-pip install pydantic-vault
+pip install pydantic-settings-vault
 
 # or if you use Poetry or Pipenv
-poetry add pydantic-vault
-pipenv install pydantic-vault
+poetry add pydantic-settings-vault
+pipenv install pydantic-settings-vault
 ```
 
 ## Getting started
 
-With [Pydantic][pydantic] [`BaseSettings`][pydantic-basesettings] class, you can easily "create a clearly-defined, type-hinted
-application configuration class" that gets its configuration from environment variables. Starting with Pydantic 1.8,
-[custom settings sources][pydantic-basesettings-customsource] are officially supported. This is where Pydantic-Vault steps
-in, allowing you to load configuration values from Hashicorp Vault secrets. It will work the same when developing locally
-(where you probably login with the Vault CLI and your own user account) and when deploying in production (using a Vault
-Approle or Kubernetes authentication for example).
+With `pydantic_settings.BaseSettings` class, you can easily "create a clearly-defined, type-hinted
+application configuration class" that gets its configuration from environment variables. It will work the same when 
+developing locally (where you probably login with the Vault CLI and your own user account) and when deploying in 
+production (using a Vault Approle or Kubernetes authentication for example).
 
 You can create a normal `BaseSettings` class, and define the `settings_customise_sources()` method to load secrets from your Vault instance using the `VaultSettingsSource` class:
 
@@ -80,7 +79,7 @@ class Settings(BaseSettings):
     model_config = {
         "vault_url": "https://vault.tld",
         "vault_token": os.environ["VAULT_TOKEN"],
-        "vault_namespace": "your/namespace",  # Optional, pydantic-vault supports Vault namespaces (for Vault Enterprise)
+        "vault_namespace": "your/namespace",  # Optional, pydantic-settings-vault supports Vault namespaces (for Vault Enterprise)
     }
 
     @classmethod
@@ -122,14 +121,14 @@ settings.password.get_secret_value()  # the value set in Vault
 
 ### `Field` additional parameters
 
-You might have noticed that we import `Field` directly from Pydantic. Pydantic-Vault doesn't add any custom logic to it, which means you can still use everything you know and love from Pydantic.
+You might have noticed that we import `Field` directly from Pydantic. pydantic-settings-vault doesn't add any custom logic to it, which means you can still use everything you know and love from Pydantic.
 
-The additional parameters Pydantic-Vault uses are:
+The additional parameters pydantic-settings-vault uses are:
 
-| Parameter name              | Required | Description |
-|-----------------------------|----------|-------------|
+| Parameter name              | Required | Description                                                                                                                                     |
+|-----------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
 | `vault_secret_path`         | **Yes**  | The path to your secret in Vault<br>This needs to be the *full path* to the secret, including its mount point (see [examples](#examples) below) |
-| `vault_secret_key`          | No       | The key to use in the secret<br>If it is not specified the whole secret content will be loaded as a dict (see [examples](#examples) below) |
+| `vault_secret_key`          | No       | The key to use in the secret<br>If it is not specified the whole secret content will be loaded as a dict (see [examples](#examples) below)      |
 
 For example, if you create a secret `database/prod` with a key `password` and a value of `a secret password` in a KV v2 secret engine mounted at the default `secret/` location, you would access it with
 
@@ -141,25 +140,25 @@ password: SecretStr = Field(
 
 ### Configuration
 
-You can configure the behaviour of Pydantic-vault in your `Settings.model_config` dict, or using environment variables:
+You can configure the behaviour of pydantic-settings-vault in your `Settings.model_config` dict, or using environment variables:
 
-| Settings name              | Required | Environment variable | Description |
-|----------------------------|----------|----------------------|-------------|
-| `settings_customise_sources()`      | **Yes**  | N/A                  | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
-| `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
-| `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
-| `vault_auth_mount_point`   | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point |
+| Settings name                  | Required | Environment variable     | Description                                                                                                   |
+|--------------------------------|----------|--------------------------|---------------------------------------------------------------------------------------------------------------|
+| `settings_customise_sources()` | **Yes**  | N/A                      | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
+| `vault_url`                    | **Yes**  | `VAULT_ADDR`             | Your Vault URL                                                                                                |
+| `vault_namespace`              | No       | `VAULT_NAMESPACE`        | Your Vault namespace (if you use one, requires Vault Enterprise)                                              |
+| `vault_auth_mount_point`       | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point                       |
 
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 
 ### Authentication
 
-Pydantic-Vault supports the following authentication method (in descending order of priority):
+pydantic-settings-vault supports the following authentication method (in descending order of priority):
   - [direct token authentication][vault-auth-token]
   - [kubernetes][vault-auth-kubernetes]
   - [approle][vault-auth-approle]
 
-Pydantic-Vault tries to be transparent and help you work, both during local development and in production. It will try to
+pydantic-settings-vault tries to be transparent and help you work, both during local development and in production. It will try to
 find the required information for the first authentication method, if it can't it goes on to the next method, until it
 has exhausted all authentication methods. In this case it gives up and logs the failure.
 
@@ -171,7 +170,7 @@ Support is planned for GKE authentication methods.
 
 To authenticate using the [Approle auth method][vault-auth-approle], you need to pass a role ID and a secret ID to your Settings class.
 
-Pydantic-vault reads this information from the following sources (in descending order of priority):
+pydantic-settings-vault reads this information from the following sources (in descending order of priority):
   - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.model_config` dict (`vault_secret_id` can be a `str` or a `SecretStr`)
   - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
 
@@ -220,7 +219,7 @@ class Settings(BaseSettings):
 
 To authenticate using the [Kubernetes auth method][vault-auth-kubernetes], you need to pass a role to your Settings class.
 
-Pydantic-vault reads this information from the following sources (in descending order of priority):
+pydantic-settings-vault reads this information from the following sources (in descending order of priority):
   - the `vault_kubernetes_role` configuration field in your `Settings.model_config` dict, which must be a `str`
   - the `VAULT_KUBERNETES_ROLE` environment variable
 
@@ -268,10 +267,10 @@ class Settings(BaseSettings):
 
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
-Pydantic-vault reads this token from the following sources (in descending order of priority):
+pydantic-settings-vault reads this token from the following sources (in descending order of priority):
   - the `vault_token` configuration field in your `Settings.model_config` dict, which can be a `str` or a `SecretStr`
   - the `VAULT_TOKEN` environment variable
-  - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-vault will transparently reuse its token)
+  - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, pydantic-settings-vault will transparently reuse its token)
 
 Example:
 ```python
@@ -313,7 +312,7 @@ class Settings(BaseSettings):
 
 ### Order of priority
 
-Thanks to the new feature in Pydantic 1.8 that allows you to [customize settings sources][pydantic-basesettings-customsource], you can choose the order of priority you want.
+You can customize settings sources and choose the order of priority you want.
 
 Here are some examples:
 ```python
@@ -463,7 +462,7 @@ settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
 
 ### Retrieve a whole secret at once
 
-If you omit the `vault_secret_key` parameter in your `Field`, Pydantic-Vault will load
+If you omit the `vault_secret_key` parameter in your `Field`, pydantic-settings-vault will load
 the whole secret in your class field.
 
 With the same secret as before, located at `my-api/prod` and with this data:
@@ -481,7 +480,7 @@ class Settings(BaseSettings):
     # For a KV v2 secret engine, there is always a `data/` sub-path between the mount point and
     # the secret actual path, eg. if your mount point is `secret/` (the default) and your secret
     # path is `my-api/prod`, the full path to use is `secret/data/my-api/prod`.
-    # We don't pass a `vault_secret_key` here so that Pydantic-Vault fetches all fields at once.
+    # We don't pass a `vault_secret_key` here so that pydantic-settings-vault fetches all fields at once.
     credentials: dict = Field(..., vault_secret_path="secret/data/my-api/prod")
 
 
@@ -501,7 +500,7 @@ class Settings(BaseSettings):
     # For a KV v2 secret engine, there is always a `data/` sub-path between the mount point and
     # the secret actual path, eg. if your mount point is `secret/` (the default) and your secret
     # path is `my-api/prod`, the full path to use is `secret/data/my-api/prod`.
-    # We don't pass a `vault_secret_key` here so that Pydantic-Vault fetches all fields at once.
+    # We don't pass a `vault_secret_key` here so that pydantic-settings-vault fetches all fields at once.
     credentials: Credentials = Field(..., vault_secret_path="secret/data/my-api/prod")
 
 
@@ -550,7 +549,7 @@ Database secrets can be "dynamic", generated by Vault every time you request acc
 Because every call to Vault will create a new database account, you cannot store the username
 and password in two different fields in your settings class, or you would get the username of the
 *first* generated account and the password of the *second* account. This means that you must *not*
-pass a `vault_secret_key`, so that Pydantic-Vault retrieves the whole secret at once.
+pass a `vault_secret_key`, so that pydantic-settings-vault retrieves the whole secret at once.
 
 You can store the credentials in a dict or in a custom `BaseModel` class:
 ```python
@@ -565,7 +564,7 @@ class Settings(BaseSettings):
     # For example if your mount point is `database/` (the default) and your role name is
     # `my-db-prod`, the full path to use is `database/creds/my-db-prod`. You will receive
     # `username` and `password` fields in response.
-    # You must *not* pass a `vault_secret_key` so that Pydantic-Vault fetches both fields at once.
+    # You must *not* pass a `vault_secret_key` so that pydantic-settings-vault fetches both fields at once.
     db_creds: DbCredentials = Field(..., vault_secret_path="database/creds/my-db-prod")
     db_creds_in_dict: dict = Field(..., vault_secret_path="database/creds/my-db-prod")
 
@@ -610,14 +609,14 @@ settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
 ## Known limitations
 
 - Pydantic by default takes up ~80 MB, because it is compiled to a native extension and optimized for speed instead of file
-  size. If you don't rely much on Pydantic (you only use it for your app configuration with Pydantic-Vault, you parse/serialize
+  size. If you don't rely much on Pydantic (you only use it for your app configuration with pydantic-settings-vault, you parse/serialize
   a low volume of JSON, your code is generally slow and Pydantic wouldn't be the bottleneck) you can use the flag
   `--no-binary pydantic` when running `pip install` to install the pure-Python version instead of the compiled one (which
   comes at less than 1 MB). You can also add the flag on its own line in your `requirements.txt`. See this discussion
   https://github.com/samuelcolvin/pydantic/issues/2276 for more information.
 
 - On KV v1 secret engines, if your secret has a `data` key and you do not specify a `vault_secret_key`
-to load the whole secret at once, Pydantic-vault will only load the content of the `data` key.
+to load the whole secret at once, pydantic-settings-vault will only load the content of the `data` key.
   For example, with a secret `kv/my-secret`
   ```
   Key             Value
@@ -631,7 +630,7 @@ to load the whole secret at once, Pydantic-vault will only load the content of t
   class Settings(BaseSettings):
       my_secret: dict = Field(..., vault_secret_path="kv/my-secret")
   ```
-  Pydantic-Vault will try to load only the `data` value (`a very important piece of data`) in
+  pydantic-settings-vault will try to load only the `data` value (`a very important piece of data`) in
   `my_secret`, which will fail validation from Pydantic because it is not a dict.
 
   **Workaround:** Rename the `data` key in your secret 😅
@@ -645,7 +644,7 @@ to load the whole secret at once, Pydantic-vault will only load the content of t
 
 ## License
 
-Pydantic-Vault is available under the [MIT license](./LICENSE).
+pydantic-settings-vault is available under the [MIT license](./LICENSE).
 
 [ansible hashi_vault]: https://docs.ansible.com/ansible/latest/collections/community/hashi_vault/hashi_vault_lookup.html
 [pydantic]: https://docs.pydantic.dev/latest/
