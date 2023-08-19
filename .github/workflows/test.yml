@@ -15,33 +15,64 @@ jobs:
   lint:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Install poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | POETRY_VERSION=$POETRY_VERSION python3
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        poetry config virtualenvs.in-project true
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
 
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.8
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | POETRY_VERSION=$POETRY_VERSION python3
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Load cached dependencies
-      id: cached-poetry-dependencies
-      uses: actions/cache@v3
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          venv-${{ runner.os }}-
+      - name: Install dependencies
+        run: poetry install --no-interaction
+        env:
+          POETRY_VIRTUALENVS_CREATE: false
 
-    - name: Install dependencies
-      run: poetry install --no-interaction
+      - name: Lint
+        run: poetry run pre-commit run --all
 
-    - name: Run linters
-      run: poetry run pre-commit run --all
+  test:
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: write
+    strategy:
+      matrix:
+        py_version: [ "3.8", "3.9", "3.10", "3.11" ]
+        os: [ ubuntu-22.04 ]
+    runs-on: "${{ matrix.os }}"
+    steps:
+      - uses: actions/checkout@v3
 
-    - name: Run tests
-      run: poetry run pytest
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "${{ matrix.py_version }}"
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | POETRY_VERSION=$POETRY_VERSION python3
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+        env:
+          POETRY_VIRTUALENVS_CREATE: false
+
+      - name: Run tests
+        run: poetry run pytest
+
+      - name: Generate report
+        run: coverage xml && coverage json
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        if: matrix.os == 'ubuntu-22.04' && matrix.py_version == '3.8'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
