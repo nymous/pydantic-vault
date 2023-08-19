@@ -3,7 +3,7 @@ import logging
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, Optional, Tuple, Type, Union, cast
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
@@ -11,24 +11,16 @@ from pydantic import SecretStr
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 from pydantic_settings.sources import SettingsError, _annotation_is_complex
-from typing_extensions import TypedDict
+
+from pydantic_vault.entities import (
+    Approle,
+    AuthMethodParameters,
+    HvacClientParameters,
+    Kubernetes,
+)
 
 logger = logging.getLogger("pydantic-vault")
 logger.addHandler(logging.NullHandler())
-
-
-class HvacClientParameters(TypedDict, total=False):
-    namespace: str
-    token: str
-
-
-class HvacReadSecretParameters(TypedDict, total=False):
-    path: str
-    mount_point: str
-
-
-class AuthMethodParameters(TypedDict, total=False):
-    mount_point: str
 
 
 class PydanticVaultException(BaseException):
@@ -36,6 +28,10 @@ class PydanticVaultException(BaseException):
 
 
 class VaultParameterError(PydanticVaultException, ValueError):
+    ...
+
+
+class _ContinueException(PydanticVaultException, Exception):
     ...
 
 
@@ -151,11 +147,6 @@ def _get_authenticated_vault_client(
     return None
 
 
-class Approle(NamedTuple):
-    role_id: str
-    secret_id: SecretStr
-
-
 def _extract_approle(settings: Type[BaseSettings]) -> Optional[Approle]:
     """Extract Approle information from environment or from BaseSettings.model_config"""
     _vault_role_id: Optional[str] = None
@@ -211,11 +202,6 @@ def _extract_vault_token(settings: Type[BaseSettings]) -> Optional[SecretStr]:
     return None
 
 
-class Kubernetes(NamedTuple):
-    role: str
-    jwt_token: SecretStr
-
-
 def _extract_kubernetes(settings: Type[BaseSettings]) -> Optional[Kubernetes]:
     """Extract Kubernetes token from default file, and role from environment or from BaseSettings.model_config"""
     _kubernetes_jwt: SecretStr
@@ -262,8 +248,6 @@ class VaultSettingsSource(PydanticBaseSettingsSource):
 
         # Get secrets
         for field_name, field_info in self.settings_cls.model_fields.items():
-            vault_val: Union[str, Dict[str, Any]]
-
             extra = self._get_field_extra(field_info)
             vault_secret_path: Optional[str] = extra.get("vault_secret_path")
             vault_secret_key: Optional[str] = extra.get("vault_secret_key")
@@ -273,54 +257,86 @@ class VaultSettingsSource(PydanticBaseSettingsSource):
                 continue
 
             try:
-                vault_api_response = vault_client.read(vault_secret_path)
-                if vault_api_response is None:
-                    raise VaultError
-                vault_api_response = vault_api_response["data"]
-            except VaultError:
-                logger.info(f'could not get secret "{vault_secret_path}"')
+                vault_val: Union[str, Dict[str, Any]] = self._get_vault_secret(
+                    vault_client=vault_client,
+                    vault_secret_path=vault_secret_path,
+                    vault_secret_key=vault_secret_key,
+                )
+            except _ContinueException:
                 continue
 
-            if vault_secret_key is None:
-                try:
-                    vault_val = vault_api_response["data"]
-                except KeyError:
-                    vault_val = vault_api_response
-            else:
-                try:
-                    vault_val = vault_api_response["data"][vault_secret_key]
-                except KeyError:
-                    try:
-                        vault_val = vault_api_response[vault_secret_key]
-                    except KeyError:
-                        logger.info(
-                            f'could not get key "{vault_secret_key}" in secret "{vault_secret_path}"'
-                        )
-                        continue
-
-            is_field_complex = _annotation_is_complex(
-                field_info.annotation, field_info.metadata
+            vault_val = self._deserialize_complex_type(
+                vault_val=vault_val,
+                field_info=field_info,
+                vault_secret_path=vault_secret_path,
+                vault_secret_key=vault_secret_key,
             )
-            if is_field_complex and not isinstance(vault_val, Dict):
-                try:
-                    try:
-                        vault_val = field_info.annotation.model_validate_json(vault_val)  # type: ignore
-                    except AttributeError:
-                        try:
-                            vault_val = json.loads(vault_val)  # type: ignore
-                        except json.decoder.JSONDecodeError as exc:
-                            raise ValueError from exc
-                except ValueError as e:
-                    secret_full_path = vault_secret_path
-                    if vault_secret_key is not None:
-                        secret_full_path += f":{vault_secret_key}"
-                    raise SettingsError(
-                        f'error parsing JSON for "{secret_full_path}"'
-                    ) from e
-
             data[field_info.alias or field_name] = vault_val
 
         return data
+
+    def _get_vault_secret(
+        self,
+        vault_client: HvacClient,
+        vault_secret_path: str,
+        vault_secret_key: Optional[str],
+    ) -> Union[str, Dict[str, Any]]:
+        try:
+            vault_api_response = vault_client.read(vault_secret_path)
+            if vault_api_response is None:
+                raise VaultError
+            vault_api_response = vault_api_response["data"]
+        except VaultError:
+            logger.info(f'could not get secret "{vault_secret_path}"')
+            raise _ContinueException
+
+        if vault_secret_key is None:
+            try:
+                vault_val = vault_api_response["data"]
+            except KeyError:
+                vault_val = vault_api_response
+        else:
+            try:
+                vault_val = vault_api_response["data"][vault_secret_key]
+            except KeyError:
+                try:
+                    vault_val = vault_api_response[vault_secret_key]
+                except KeyError:
+                    logger.info(
+                        f'could not get key "{vault_secret_key}" in secret "{vault_secret_path}"'
+                    )
+                    raise _ContinueException
+
+        return vault_val
+
+    def _deserialize_complex_type(
+        self,
+        vault_val: Union[str, Dict[str, Any]],
+        field_info: FieldInfo,
+        vault_secret_path: str,
+        vault_secret_key: Optional[str],
+    ) -> Union[str, Dict[str, Any]]:
+        is_field_complex = _annotation_is_complex(
+            field_info.annotation, field_info.metadata
+        )
+        if is_field_complex and not isinstance(vault_val, Dict):
+            try:
+                try:
+                    vault_val = field_info.annotation.model_validate_json(vault_val)  # type: ignore
+                except AttributeError:
+                    try:
+                        vault_val = json.loads(vault_val)  # type: ignore
+                    except json.decoder.JSONDecodeError as exc:
+                        raise ValueError from exc
+            except ValueError as e:
+                secret_full_path = vault_secret_path
+                if vault_secret_key is not None:
+                    secret_full_path += f":{vault_secret_key}"
+                raise SettingsError(
+                    f'error parsing JSON for "{secret_full_path}"'
+                ) from e
+
+        return vault_val
 
     def _get_field_extra(self, field_info: FieldInfo) -> Dict[str, Any]:
         extra = {}
