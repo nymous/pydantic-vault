@@ -53,4 +53,4 @@ build-backend = "poetry.core.masonry.api"
 profile = "black"
 
 [tool.pytest.ini_options]
-addopts = "--cov=src --cov-branch --cov-fail-under=95"
+addopts = "--cov=src --cov-branch --cov-fail-under=95 --cov-report html:coverage_report"
