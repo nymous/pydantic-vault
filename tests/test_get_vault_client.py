@@ -576,7 +576,6 @@ def test_get_vault_client_with_kubernetes_token_role_in_config(
     with mock.patch(
         "pydantic_vault.vault_settings.HvacClient", autospec=True
     ) as vault_client_mock:
-
         _get_authenticated_vault_client(settings)
         vault_client_mock.assert_called_once_with("https://vault.tld")
         vault_client_mock.return_value.auth.kubernetes.login.assert_called_once_with(

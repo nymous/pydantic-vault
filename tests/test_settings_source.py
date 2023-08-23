@@ -89,7 +89,7 @@ def test_get_vault_secrets() -> None:
             vault_secret_key="username",
         )
         password: SecretStr = Field(
-            "doesn't matter",
+            SecretStr("doesn't matter"),
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
         )

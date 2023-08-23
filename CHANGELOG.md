@@ -47,14 +47,23 @@ First beta release! 🎉 Beware of the breaking changes listed below!
   ```python
   # Before
   class Settings(BaseSettings):
-      db_username = Field(..., vault_secret_path="my-api/prod", vault_secret_key="db_username")
+      db_username = Field(
+          ...,
+          vault_secret_path="my-api/prod",
+          vault_secret_key="db_username",
+      )
 
       class Config:
           vault_secret_mount_point: str = "secret"
 
+
   # After
-    class Settings(BaseSettings):
-      db_username = Field(..., vault_secret_path="secret/data/my-api/prod", vault_secret_key="db_username")
+  class Settings(BaseSettings):
+      db_username = Field(
+          ...,
+          vault_secret_path="secret/data/my-api/prod",
+          vault_secret_key="db_username",
+      )
   ```
   See the examples in the readme for more information.
 - **BREAKING**: Invert the priority of environment variables and Config values (config now overrides what is set in environment variables)
