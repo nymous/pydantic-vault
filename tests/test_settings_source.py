@@ -88,11 +88,11 @@ def test_get_vault_secrets() -> None:
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="username",
         )
-        password: SecretStr = Field(
+        password: SecretStr = Field(  # type: ignore[assignment]
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
-        )  # type: ignore[assignment]
+        )
 
         class Config:
             vault_url: str = "https://vault.tld"
@@ -169,10 +169,10 @@ def test_get_secret_without_key() -> None:
         password: SecretStr
 
     class Settings(BaseSettings):
-        db_credentials: DbCredentials = Field(
+        db_credentials: DbCredentials = Field(  # type: ignore[assignment]
             {"username": "doesn't matter", "password": "doesn't matter"},
             vault_secret_path="database/creds/db_role",
-        )  # type: ignore[assignment]
+        )
         kvv2_secret: Dict[str, Any] = Field(
             {}, vault_secret_path="secret/data/first_level_key"
         )
@@ -232,11 +232,11 @@ def test_get_secret_jsonified() -> None:
         list: List[int]
 
     class Settings(BaseSettings):
-        json_field: JsonField = Field(
+        json_field: JsonField = Field(  # type: ignore[assignment]
             {"key": "doesn't matter", "list": []},
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="json_in_string",
-        )  # type: ignore[assignment]
+        )
 
         class Config:
             vault_url: str = "https://vault.tld"
