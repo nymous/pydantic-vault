@@ -1,8 +1,11 @@
 # Pydantic-Vault
 
-[![PyPI](https://img.shields.io/pypi/v/pydantic-vault)](https://pypi.org/project/pydantic-vault/)
+[![License](https://img.shields.io/pypi/l/pydantic-vault)](./LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/pydantic-vault)][pydantic-vault-pypi]
+![Python versions](https://img.shields.io/pypi/pyversions/pydantic-vault)
 [![Check code](https://github.com/nymous/pydantic-vault/workflows/Check%20code/badge.svg)](https://github.com/nymous/pydantic-vault/actions/workflows/check_code.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Downloads](https://img.shields.io/pypi/dm/pydantic-vault)][pydantic-vault-pypi]
 
 A simple extension to [Pydantic][pydantic] [BaseSettings][pydantic-basesettings] that can retrieve secrets stored in Hashicorp [Vault][vault]
 
@@ -620,6 +623,7 @@ Pydantic-Vault is available under the [MIT license](./LICENSE).
 [pydantic]: https://pydantic-docs.helpmanual.io/
 [pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
 [pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
+[pydantic-vault-pypi]: https://pypi.org/project/pydantic-vault/
 [vault]: https://www.vaultproject.io/
 [vault-action]: https://github.com/hashicorp/vault-action
 [vault-auth-approle]: https://www.vaultproject.io/docs/auth/approle
