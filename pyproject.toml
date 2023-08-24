@@ -30,19 +30,19 @@ packages = [
 "Changelog" = "https://github.com/nymous/pydantic-vault/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.7"
 pydantic = "^1.8"
 hvac = ">=0.10.6, <0.12"
 
-[tool.poetry.dev-dependencies]
-black = "^21.7b0"
-mypy = "^0.910"
-pytest = "^6.2.4"
-pytest-mock = "^3.6.1"
-pyfakefs = "^4.5.0"
-pytest-cov = "^2.12.1"
-pre-commit = "^2.14.0"
-isort = "^5.9.3"
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^2.21"
+black = "^23.3.0"
+mypy = "^1.4"
+isort = "^5.11"
+pytest = "^7.4.0"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.1.0"
+pyfakefs = "^5.2.4"
 
 [build-system]
 requires = ["poetry-core"]

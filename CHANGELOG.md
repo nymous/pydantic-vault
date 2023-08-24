@@ -5,10 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Breaking changes
+**Drop support of Python 3.6.**
+Recent versions of dev dependencies require 3.7 or more, and some have even started to drop 3.7.
+I hope it won't hurt many, as Python 3.6 is unsupported since December 2021.
+The code hasn't changed yet, so it should still run on 3.6, we don't test it anymore though ^^'
+
+### Internal
+- Bump all dev dependencies and Actions
 
 
 ## [0.7.2] - 2023-02-07
-Thank you @ingvaldlorentzen for your contribution!
+Thank you, @ingvaldlorentzen, for your contribution!
 
 ### Fixed
 - Fix `TypeError` breaking Pydantic defaults when Vault returns `None` (#13)
@@ -47,14 +55,23 @@ First beta release! 🎉 Beware of the breaking changes listed below!
   ```python
   # Before
   class Settings(BaseSettings):
-      db_username = Field(..., vault_secret_path="my-api/prod", vault_secret_key="db_username")
+      db_username = Field(
+          ...,
+          vault_secret_path="my-api/prod",
+          vault_secret_key="db_username",
+      )
 
       class Config:
           vault_secret_mount_point: str = "secret"
 
+
   # After
-    class Settings(BaseSettings):
-      db_username = Field(..., vault_secret_path="secret/data/my-api/prod", vault_secret_key="db_username")
+  class Settings(BaseSettings):
+      db_username = Field(
+          ...,
+          vault_secret_path="secret/data/my-api/prod",
+          vault_secret_key="db_username",
+      )
   ```
   See the examples in the readme for more information.
 - **BREAKING**: Invert the priority of environment variables and Config values (config now overrides what is set in environment variables)

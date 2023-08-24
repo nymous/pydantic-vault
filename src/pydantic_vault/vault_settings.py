@@ -289,7 +289,7 @@ def vault_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
             vault_val, dict
         ):  # If it is already a dict we can load it in Pydantic
             try:
-                vault_val = settings.__config__.json_loads(vault_val)  # type: ignore
+                vault_val = settings.__config__.json_loads(vault_val)
             except ValueError as e:
                 secret_full_path = vault_secret_path
                 if vault_secret_key is not None:
