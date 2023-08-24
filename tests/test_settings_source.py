@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, NonCallableMagicMock
 
 import pytest
 from hvac.exceptions import VaultError
@@ -75,7 +75,7 @@ def bypass_hvac_client(mocker: MockerFixture) -> MagicMock:
     mock_hvac_client_constructor = mocker.patch(
         "pydantic_vault.vault_settings.HvacClient", autospec=True
     )
-    mock_hvac_client = mock_hvac_client_constructor.return_value
+    mock_hvac_client: NonCallableMagicMock = mock_hvac_client_constructor.return_value
     mock_hvac_client.read.side_effect = fake_vault
 
     return mock_hvac_client
@@ -89,10 +89,10 @@ def test_get_vault_secrets() -> None:
             vault_secret_key="username",
         )
         password: SecretStr = Field(
-            SecretStr("doesn't matter"),
+            "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
-        )
+        )  # type: ignore[assignment]
 
         class Config:
             vault_url: str = "https://vault.tld"
@@ -172,7 +172,7 @@ def test_get_secret_without_key() -> None:
         db_credentials: DbCredentials = Field(
             {"username": "doesn't matter", "password": "doesn't matter"},
             vault_secret_path="database/creds/db_role",
-        )
+        )  # type: ignore[assignment]
         kvv2_secret: Dict[str, Any] = Field(
             {}, vault_secret_path="secret/data/first_level_key"
         )
@@ -236,7 +236,7 @@ def test_get_secret_jsonified() -> None:
             {"key": "doesn't matter", "list": []},
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="json_in_string",
-        )
+        )  # type: ignore[assignment]
 
         class Config:
             vault_url: str = "https://vault.tld"
