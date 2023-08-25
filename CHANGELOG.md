@@ -5,11 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+Thank you, @area42, for your contribution!
+
 ### Breaking changes
 **Drop support of Python 3.6.**
-Recent versions of dev dependencies require 3.7 or more, and some have even started to drop 3.7.
+Recent versions of dependencies (`hvac` and other dev dependencies) require 3.7 or more, and some have even started to drop 3.7.
 I hope it won't hurt many, as Python 3.6 is unsupported since December 2021.
 The code hasn't changed yet, so it should still run on 3.6, we don't test it anymore though ^^'
+
+### Added
+- Support `hvac` 1.X (relaxed the upper constraint on `hvac`). Initially proposed by @area42 in #18, I just reapplied the change on top of the new main to avoid conflicts
 
 ### Internal
 - Bump all dev dependencies and Actions
