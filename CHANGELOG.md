@@ -19,6 +19,9 @@ The code hasn't changed yet, so it should still run on 3.6, we don't test it any
 ### Internal
 - Bump all dev dependencies and Actions
 
+### Added
+
+- Add support for authenticating via JWT tokens (e.g. Gitlab)
 
 ## [0.7.2] - 2023-02-07
 Thank you, @ingvaldlorentzen, for your contribution!

@@ -20,9 +20,16 @@ class KubernetesStub:
     ) -> Dict[str, Any]:
         raise NotImplementedError()
 
+class JwtStub:
+    @staticmethod
+    def jwt_login(
+        role: str, jwt: str, path: Optional[str] = None
+    ) -> Dict[str, Any]: ...
+
 class AuthStub:
     approle: ApproleStub
     kubernetes: KubernetesStub
+    jwt: JwtStub
 
 class Client:
     auth: AuthStub

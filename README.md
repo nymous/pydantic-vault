@@ -147,6 +147,7 @@ You can configure the behaviour of Pydantic-vault in your `Settings.Config` clas
 | `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
 | `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
 | `vault_auth_mount_point`   | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point |
+| `vault_auth_path`          | No       | `VAULT_AUTH_PATH`        | The path of the authentication method, as in /auth/{path}/login, if different from its default, only supported by JWT_authentication method |
 
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 
@@ -156,6 +157,7 @@ Pydantic-Vault supports the following authentication method (in descending order
   - [direct token authentication][vault-auth-token]
   - [kubernetes][vault-auth-kubernetes]
   - [approle][vault-auth-approle]
+  - [JWT token][vault-auth-jwt]
 
 Pydantic-Vault tries to be transparent and help you work, both during local development and in production. It will try to
 find the required information for the first authentication method, if it can't it goes on to the next method, until it
@@ -236,6 +238,52 @@ class Settings(BaseSettings):
     class Config:
         vault_url: str = "https://vault.tld"
         vault_kubernetes_role: str = "my-role"
+
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings,
+            env_settings,
+            file_secret_settings,
+        ):
+            return (
+                init_settings,
+                env_settings,
+                vault_config_settings_source,
+                file_secret_settings,
+            )
+```
+
+#### JWT Token
+
+To authenticate using the [JWT token method][vault-auth-jwt], you need to pass a token role and a token itself to your Settings class.
+
+Pydantic-vault reads this information from the following sources (in descending order of priority):
+
+- the `vault_jwt_role` and `vault_jwt_token` configuration fields in your `Settings.Config` class (`vault_jwt_token` can be a `str` or a `SecretStr`)
+- the `VAULT_JWT_ROLE` and `VAULT_JWT_TOKEN` environment variables
+
+You can also mix-and-match, e.g. write the role in your `Settings.Config` class and retrieve the token from the environment at runtime.
+
+Example:
+
+```python
+from pydantic import BaseSettings, Field, SecretStr
+from pydantic_vault import vault_config_settings_source
+
+
+class Settings(BaseSettings):
+    username: str = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_user"
+    )
+    password: SecretStr = Field(
+        ..., vault_secret_path="path/to/secret", vault_secret_key="my_password"
+    )
+
+    class Config:
+        vault_url: str = "https://vault.tld"
+        vault_jwt_role: str = "my-role"
+        vault_jwt_token: SecretStr = SecretStr("my-token")
 
         @classmethod
         def customise_sources(
