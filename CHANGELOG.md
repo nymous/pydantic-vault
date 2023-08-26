@@ -15,6 +15,7 @@ The code hasn't changed yet, so it should still run on 3.6, we don't test it any
 
 ### Added
 - Support `hvac` 1.X (relaxed the upper constraint on `hvac`). Initially proposed by @area42 in #18, I just reapplied the change on top of the new main to avoid conflicts
+- Support to skip SSL verification or to define CA bundle
 
 ### Internal
 - Bump all dev dependencies and Actions
