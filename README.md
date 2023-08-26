@@ -147,6 +147,7 @@ You can configure the behaviour of Pydantic-vault in your `Settings.Config` clas
 | `vault_url`                | **Yes**  | `VAULT_ADDR`         | Your Vault URL |
 | `vault_namespace`          | No       | `VAULT_NAMESPACE`    | Your Vault namespace (if you use one, requires Vault Enterprise) |
 | `vault_auth_mount_point`   | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point |
+| `vault_certificate_verify` | No       | `VAULT_CA_BUNDLE`    | Your Vault CA bundle of "False" to disable verification |
 
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 

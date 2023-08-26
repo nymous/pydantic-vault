@@ -1,6 +1,7 @@
 import logging
 import os
 from contextlib import suppress
+from distutils.util import strtobool
 from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional, Union, cast
 
@@ -17,6 +18,7 @@ logger.addHandler(logging.NullHandler())
 class HvacClientParameters(TypedDict, total=False):
     namespace: str
     token: str
+    verify: Union[str, bool]
 
 
 class HvacReadSecretParameters(TypedDict, total=False):
@@ -81,6 +83,23 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
         _vault_namespace = cast(str, settings.__config__.vault_namespace)  # type: ignore
         hvac_parameters.update({"namespace": _vault_namespace})
         logger.debug(f"Found Vault Namespace '{_vault_namespace}' in Config")
+
+    # Cretificate verification
+    if "VAULT_CA_BUNDLE" in os.environ:
+        _vault_certificate_verify = os.environ["VAULT_CA_BUNDLE"]
+        try:
+            hvac_parameters.update({"verify": strtobool(_vault_certificate_verify)})  # type: ignore
+        except:
+            hvac_parameters.update({"verify": _vault_certificate_verify})
+        logger.debug(
+            f"Found Vault CA Bundle '{_vault_certificate_verify}' in envirnment variable"
+        )
+    if getattr(settings.__config__, "vault_certificate_verify", None) is not None:
+        _vault_certificate_verify = cast(
+            Union[str, bool], settings.__config__.vault_certificate_verify  # type: ignore
+        )
+        hvac_parameters.update({"verify": _vault_certificate_verify})
+        logger.debug(f"Found Vault CA Bundle '{_vault_certificate_verify}' in Config")
 
     # Auth method parameters
     _vault_auth_method_parameters: AuthMethodParameters = {}

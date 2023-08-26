@@ -830,3 +830,64 @@ def test_get_vault_client_token_approle_priority(
     # fmt: off
     assert ("pydantic-vault", logging.INFO, "Connecting to Vault 'https://vault.tld' with method 'Vault Token'") in caplog.record_tuples
     # fmt: on
+
+
+def test_get_vault_client_with_disabled_ssl_verfiy(
+    mocker: MockerFixture, caplog: LogCaptureFixture
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_token: str = "fake-token"
+            vault_namespace: str = "some/namespace"
+            vault_certificate_verify: bool = False
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with(
+        "https://vault.tld",
+        namespace="some/namespace",
+        token="fake-token",
+        verify=False,
+    )
+    # fmt: off
+    assert ("pydantic-vault", logging.DEBUG, "Found Vault Namespace 'some/namespace' in Config") in caplog.record_tuples
+    assert ("pydantic-vault", logging.DEBUG, "Found Vault CA Bundle 'False' in Config") in caplog.record_tuples
+    assert ("pydantic-vault", logging.INFO, "Connecting to Vault 'https://vault.tld' on namespace 'some/namespace' with method 'Vault Token'") in caplog.record_tuples
+    # fmt: on
+
+
+def test_get_vault_client_with_disabled_ssl_verfiy_env_config(
+    mocker: MockerFixture, monkeypatch: MonkeyPatch, caplog: LogCaptureFixture
+) -> None:
+    class Settings(BaseSettings):
+        class Config:
+            vault_url: str = "https://vault.tld"
+            vault_token: str = "fake-token"
+            vault_namespace: str = "some/namespace"
+
+    monkeypatch.setenv("VAULT_CA_BUNDLE", "False")
+
+    settings = Settings()
+
+    vault_client_mock = mocker.patch(
+        "pydantic_vault.vault_settings.HvacClient", autospec=True
+    )
+
+    _get_authenticated_vault_client(settings)
+    vault_client_mock.assert_called_once_with(
+        "https://vault.tld",
+        namespace="some/namespace",
+        token="fake-token",
+        verify=False,
+    )
+    # fmt: off
+    assert ("pydantic-vault", logging.DEBUG, "Found Vault Namespace 'some/namespace' in Config") in caplog.record_tuples
+    assert ("pydantic-vault", logging.DEBUG, "Found Vault CA Bundle 'False' in envirnment variable") in caplog.record_tuples
+    assert ("pydantic-vault", logging.INFO, "Connecting to Vault 'https://vault.tld' on namespace 'some/namespace' with method 'Vault Token'") in caplog.record_tuples
+    # fmt: on
