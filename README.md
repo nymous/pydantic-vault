@@ -24,7 +24,6 @@ authentication for example).
     + [Kubernetes](#kubernetes)
     + [Vault token](#vault-token)
   * [Order of priority](#order-of-priority)
-  * [Save secret to file](#save-secret-to-file)
 - [Logging](#logging)
 - [Examples](#examples)
   * [Retrieve a secret from a KV v2 secret engine](#retrieve-a-secret-from-a-kv-v2-secret-engine)
@@ -375,31 +374,6 @@ class Settings(BaseSettings):
             dotenv_settings,
             file_secret_settings,
         )
-```
-
-### Save secret to file
-
-You can save the secret to a file in the filesystem, for example if you want to use library that works only with files.
-One example is the google-ads library, which requires passing the path to the file with the service account.
-
-```python
-from pathlib import Path
-
-from pydantic import BaseModel, AfterValidator
-from pydantic_vault import StoredSecret, FileInfo
-from typing_extensions import Annotated
-
-
-class Settings(BaseModel):
-    google_ads_service_account: Annotated[
-        StoredSecret[str],
-        AfterValidator(FileInfo(Path("service-account.json"))),
-    ]
-
-
-settings = Settings()
-print(settings.google_ads_service_account.get_value())
-print(settings.google_ads_service_account.get_file_info().path)
 ```
 
 ## Logging

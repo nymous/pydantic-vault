@@ -3,17 +3,14 @@ from __future__ import annotations
 import json.decoder
 import logging
 import os
-import typing
 from contextlib import suppress
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Generic, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar, Union, cast
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
-from pydantic import GetCoreSchemaHandler, SecretStr
+from pydantic import SecretStr
 from pydantic.fields import FieldInfo
-from pydantic_core import CoreSchema, core_schema
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
 from pydantic_settings.sources import SettingsError, _annotation_is_complex
 
@@ -26,8 +23,6 @@ from pydantic_vault.entities import (
 
 logger = logging.getLogger("pydantic-vault")
 logger.addHandler(logging.NullHandler())
-
-T = TypeVar("T")
 
 
 class PydanticVaultException(BaseException):
@@ -352,90 +347,3 @@ class VaultSettingsSource(PydanticBaseSettingsSource):
         elif callable(field_info.json_schema_extra):
             field_info.json_schema_extra(extra)
         return extra
-
-
-class StoredSecret(Generic[T]):
-    """
-    Generic type of secrets that can be saved to disk. Should be used with FileInfo validator.
-
-    Example:
-        ```py
-        from pathlib import Path
-
-        from pydantic import BaseModel, AfterValidator
-        from pydantic_vault import StoredSecret, FileInfo
-        from typing_extensions import Annotated
-
-        class Settings(BaseModel):
-            google_ads_service_account: Annotated[
-                StoredSecret[str],
-                AfterValidator(FileInfo(Path('service-account.json'))),
-            ]
-        ```
-    """
-
-    def __init__(self, value: T) -> None:
-        self.value: T = value
-        self.file_info: FileInfo | None = None
-
-    def set_file_info(self, path: FileInfo) -> None:
-        self.file_info = path
-
-    def get_file_info(self) -> Optional[FileInfo]:
-        return self.file_info
-
-    def get_value(self) -> T:
-        return self.value
-
-    def save_to_disk(self) -> None:
-        if self.file_info is None:
-            raise ValueError("Cannot save secret to disk. SecretPath is not set.")
-
-        try:
-            data = (
-                json.dumps(self.value)
-                if not isinstance(self.value, str)
-                else self.value
-            )
-            self.file_info.path.write_text(data, encoding=self.file_info.encoding)
-        except Exception:
-            logger.error(
-                "Failed to save secret to disk: %s", self.file_info.path, exc_info=True
-            )
-            if self.file_info.raise_error:
-                raise
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        secret_type = next(iter(typing.get_args(source_type)))
-        return core_schema.no_info_after_validator_function(cls, handler(secret_type))
-
-    def __repr__(self) -> str:
-        return self._display()
-
-    def __str__(self) -> str:
-        return self._display()
-
-    def _display(self) -> str:
-        path = self.file_info.path if self.file_info is not None else None
-        encoding = self.file_info.encoding if self.file_info is not None else None
-        return f"StoredSecret({self.value}, path={path}, encoding={encoding})"
-
-
-@dataclass
-class FileInfo:
-    path: Path
-    encoding: str = "utf-8"
-    raise_error: bool = True
-
-    def __call__(self, stored_secret: StoredSecret[T]) -> StoredSecret[T]:
-        if not isinstance(stored_secret, StoredSecret):
-            raise TypeError(
-                "FileInfo can be used only with object type of StoredSecret"
-            )
-
-        stored_secret.set_file_info(self)
-        stored_secret.save_to_disk()
-        return stored_secret
