@@ -17,7 +17,7 @@ logger.addHandler(logging.NullHandler())
 class HvacClientParameters(TypedDict, total=False):
     namespace: str
     token: str
-    verify: Union[str, bool]
+    verify: Union[bool, str]
 
 
 class HvacReadSecretParameters(TypedDict, total=False):
@@ -85,7 +85,7 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
 
     # Certificate verification
     if "VAULT_CA_BUNDLE" in os.environ:
-        _vault_certificate_verify = os.environ["VAULT_CA_BUNDLE"]
+        _vault_certificate_verify: Union[bool, str] = os.environ["VAULT_CA_BUNDLE"]
         try:
             hvac_parameters.update(
                 {"verify": parse_obj_as(bool, _vault_certificate_verify)}
@@ -97,7 +97,7 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
         )
     if getattr(settings.__config__, "vault_certificate_verify", None) is not None:
         _vault_certificate_verify = cast(
-            Union[str, bool], settings.__config__.vault_certificate_verify  # type: ignore
+            Union[bool, str], settings.__config__.vault_certificate_verify  # type: ignore
         )
         hvac_parameters.update({"verify": _vault_certificate_verify})
         logger.debug(f"Found Vault CA bundle '{_vault_certificate_verify}' in Config")
