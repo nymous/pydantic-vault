@@ -622,9 +622,9 @@ Pydantic-Vault is available under the [MIT license](./LICENSE).
 
 [ansible hashi_vault]: https://docs.ansible.com/ansible/latest/collections/community/hashi_vault/hashi_vault_lookup.html
 [hvac-private-ca]: https://hvac.readthedocs.io/en/stable/advanced_usage.html#making-use-of-private-ca
-[pydantic]: https://pydantic-docs.helpmanual.io/
-[pydantic-basesettings]: https://pydantic-docs.helpmanual.io/usage/settings/
-[pydantic-basesettings-customsource]: https://pydantic-docs.helpmanual.io/usage/settings/#customise-settings-sources
+[pydantic]: https://docs.pydantic.dev/1.10/
+[pydantic-basesettings]: https://docs.pydantic.dev/1.10/usage/settings/
+[pydantic-basesettings-customsource]: https://docs.pydantic.dev/1.10/usage/settings/#customise-settings-sources
 [pydantic-vault-pypi]: https://pypi.org/project/pydantic-vault/
 [vault]: https://www.vaultproject.io/
 [vault-action]: https://github.com/hashicorp/vault-action
