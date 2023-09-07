@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-Thank you, @area42, for your contribution!
+Thank you, @area42 and @raider444, for your contributions!
 
 ### Breaking changes
 **Drop support of Python 3.6.**
@@ -15,6 +15,7 @@ The code hasn't changed yet, so it should still run on 3.6, we don't test it any
 
 ### Added
 - Support `hvac` 1.X (relaxed the upper constraint on `hvac`). Initially proposed by @area42 in #18, I just reapplied the change on top of the new main to avoid conflicts
+- Support providing a custom CA bundle for Vault certificate validation, or skipping SSL validation altogether (#24)
 
 ### Internal
 - Bump all dev dependencies and Actions

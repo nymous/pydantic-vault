@@ -12,6 +12,7 @@ def clean_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.delenv("VAULT_ROLE_ID", raising=False)
     monkeypatch.delenv("VAULT_SECRET_ID", raising=False)
     monkeypatch.delenv("VAULT_KUBERNETES_ROLE", raising=False)
+    monkeypatch.delenv("VAULT_CA_BUNDLE", raising=False)
 
 
 @pytest.fixture(autouse=True)

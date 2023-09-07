@@ -6,7 +6,7 @@ from typing import Any, Dict, NamedTuple, Optional, Union, cast
 
 from hvac import Client as HvacClient
 from hvac.exceptions import VaultError
-from pydantic import BaseSettings, SecretStr
+from pydantic import BaseSettings, SecretStr, ValidationError, parse_obj_as
 from pydantic.env_settings import SettingsError
 from typing_extensions import TypedDict
 
@@ -17,6 +17,7 @@ logger.addHandler(logging.NullHandler())
 class HvacClientParameters(TypedDict, total=False):
     namespace: str
     token: str
+    verify: Union[bool, str]
 
 
 class HvacReadSecretParameters(TypedDict, total=False):
@@ -81,6 +82,25 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
         _vault_namespace = cast(str, settings.__config__.vault_namespace)  # type: ignore
         hvac_parameters.update({"namespace": _vault_namespace})
         logger.debug(f"Found Vault Namespace '{_vault_namespace}' in Config")
+
+    # Certificate verification
+    if "VAULT_CA_BUNDLE" in os.environ:
+        _vault_certificate_verify: Union[bool, str] = os.environ["VAULT_CA_BUNDLE"]
+        try:
+            hvac_parameters.update(
+                {"verify": parse_obj_as(bool, _vault_certificate_verify)}
+            )
+        except ValidationError:
+            hvac_parameters.update({"verify": _vault_certificate_verify})
+        logger.debug(
+            f"Found Vault CA bundle '{_vault_certificate_verify}' in environment variables"
+        )
+    if getattr(settings.__config__, "vault_certificate_verify", None) is not None:
+        _vault_certificate_verify = cast(
+            Union[bool, str], settings.__config__.vault_certificate_verify  # type: ignore
+        )
+        hvac_parameters.update({"verify": _vault_certificate_verify})
+        logger.debug(f"Found Vault CA bundle '{_vault_certificate_verify}' in Config")
 
     # Auth method parameters
     _vault_auth_method_parameters: AuthMethodParameters = {}
