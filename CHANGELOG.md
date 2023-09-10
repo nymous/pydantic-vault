@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.0] - 2023-09-10
 Thank you, @area42 and @raider444, for your contributions!
 
 ### Breaking changes
@@ -14,7 +16,7 @@ I hope it won't hurt many, as Python 3.6 is unsupported since December 2021.
 The code hasn't changed yet, so it should still run on 3.6, we don't test it anymore though ^^'
 
 ### Added
-- Support `hvac` 1.X (relaxed the upper constraint on `hvac`). Initially proposed by @area42 in #18, I just reapplied the change on top of the new main to avoid conflicts
+- Support `hvac` 1.X (relaxed the upper constraint on `hvac`). Initially proposed by @area42 in #18, I just reapplied the change on top of the new main to avoid conflicts (#23)
 - Support providing a custom CA bundle for Vault certificate validation, or skipping SSL validation altogether (#24)
 
 ### Internal
@@ -127,7 +129,8 @@ This release has been YANKED because of a bad deployment
 ### Added
 - First alpha release
 
-[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.7.2...HEAD
+[Unreleased]: https://github.com/nymous/pydantic-vault/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/nymous/pydantic-vault/compare/0.7.2...0.8.0
 [0.7.2]: https://github.com/nymous/pydantic-vault/compare/0.7.1...0.7.2
 [0.7.1]: https://github.com/nymous/pydantic-vault/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/nymous/pydantic-vault/compare/0.6.0a0...0.7.0
