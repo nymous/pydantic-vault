@@ -248,7 +248,7 @@ def test_get_vault_client_vault_token_priority_file_config(
     mock_vault_token_from_file: str,
 ) -> None:
     """
-    Value in Config class should be preferred over .vault-token file
+    .vault-token file should be preferred over value in Config class
     """
 
     class Settings(BaseSettings):
@@ -264,7 +264,7 @@ def test_get_vault_client_vault_token_priority_file_config(
 
     _get_authenticated_vault_client(settings)
     vault_client_mock.assert_called_once_with(
-        "https://vault.tld", token="fake-token-from-config"
+        "https://vault.tld", token="token-from-file"
     )
 
 

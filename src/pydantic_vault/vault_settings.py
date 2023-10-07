@@ -209,6 +209,12 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
         logger.debug("Found Vault Token in environment variables")
         return _vault_token
 
+    with suppress(FileNotFoundError):
+        with open(Path.home() / ".vault-token") as token_file:
+            _vault_token = SecretStr(token_file.read().strip())
+            logger.debug("Found Vault Token in file '~/.vault-token'")
+            return _vault_token
+
     if getattr(settings.__config__, "vault_token", None) is not None:
         if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
             _vault_token = settings.__config__.vault_token  # type: ignore
@@ -216,12 +222,6 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
             _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
         logger.debug("Found Vault Token in Config")
         return _vault_token
-
-    with suppress(FileNotFoundError):
-        with open(Path.home() / ".vault-token") as token_file:
-            _vault_token = SecretStr(token_file.read().strip())
-            logger.debug("Found Vault Token in file '~/.vault-token'")
-            return _vault_token
 
     return None
 
