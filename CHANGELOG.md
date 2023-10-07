@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+**Field value priority change**
+
+Initially, values in a Config class took higher priority over environment variables, effectively making it hard to override hardcoded defaults
+outside of the source code. This release addresses this inconvenience and makes the ordering consistent with [Pydantic](https://docs.pydantic.dev/latest/concepts/pydantic_settings/#field-value-priority) and [12 Factor App](https://12factor.net/config).
+
 ## [0.8.0] - 2023-09-10
 Thank you, @area42 and @raider444, for your contributions!
 
