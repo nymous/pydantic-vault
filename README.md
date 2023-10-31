@@ -82,7 +82,7 @@ class Settings(BaseSettings):
     class Config:
         vault_url: str = "https://vault.tld"
         vault_token: SecretStr = os.environ["VAULT_TOKEN"]
-        vault_namespace: str = "your/namespace"  # Optional, pydantic-vault supports Vault namespaces (for Vault Enterprise)
+        vault_namespace: str = "your/namespace"  # Optional, Pydantic-Vault supports Vault namespaces (for Vault Enterprise)
 
         @classmethod
         def customise_sources(
@@ -139,7 +139,7 @@ password: SecretStr = Field(
 
 ### Configuration
 
-You can configure the behaviour of Pydantic-vault in your `Settings.Config` class, or using environment variables:
+You can configure the behaviour of Pydantic-Vault in your `Settings.Config` class, or using environment variables:
 
 | Settings name              | Type                  | Required | Environment variable     | Description                                                                                                                      |
 |----------------------------|-----------------------|----------|--------------------------|----------------------------------------------------------------------------------------------------------------------------------|
@@ -164,13 +164,13 @@ has exhausted all authentication methods. In this case it gives up and logs the 
 
 You only need to know this order of priority if you specify the authentication parameters for multiple methods.
 
-Support is planned for GKE authentication methods.
+Support is planned for GKE authentication methods (contributions welcome! :wink:).
 
 #### Approle
 
 To authenticate using the [Approle auth method][vault-auth-approle], you need to pass a role ID and a secret ID to your Settings class.
 
-Pydantic-vault reads this information from the following sources (in descending order of priority):
+Pydantic-Vault reads this information from the following sources (in descending order of priority):
   - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.Config` class (`vault_secret_id` can be a `str` or a `SecretStr`)
   - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
 
@@ -214,7 +214,7 @@ class Settings(BaseSettings):
 
 To authenticate using the [Kubernetes auth method][vault-auth-kubernetes], you need to pass a role to your Settings class.
 
-Pydantic-vault reads this information from the following sources (in descending order of priority):
+Pydantic-Vault reads this information from the following sources (in descending order of priority):
   - the `vault_kubernetes_role` configuration field in your `Settings.Config` class, which must be a `str`
   - the `VAULT_KUBERNETES_ROLE` environment variable
 
@@ -257,7 +257,7 @@ class Settings(BaseSettings):
 
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
-Pydantic-vault reads this token from the following sources (in descending order of priority):
+Pydantic-Vault reads this token from the following sources (in descending order of priority):
   - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
   - the `VAULT_TOKEN` environment variable
   - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-vault will transparently reuse its token)
@@ -590,7 +590,7 @@ settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
   https://github.com/samuelcolvin/pydantic/issues/2276 for more information.
 
 - On KV v1 secret engines, if your secret has a `data` key and you do not specify a `vault_secret_key`
-to load the whole secret at once, Pydantic-vault will only load the content of the `data` key.
+to load the whole secret at once, Pydantic-Vault will only load the content of the `data` key.
   For example, with a secret `kv/my-secret`
   ```
   Key             Value
