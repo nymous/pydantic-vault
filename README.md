@@ -582,13 +582,6 @@ settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
 
 ## Known limitations
 
-- Pydantic by default takes up ~80 MB, because it is compiled to a native extension and optimized for speed instead of file
-  size. If you don't rely much on Pydantic (you only use it for your app configuration with Pydantic-Vault, you parse/serialize
-  a low volume of JSON, your code is generally slow and Pydantic wouldn't be the bottleneck) you can use the flag
-  `--no-binary pydantic` when running `pip install` to install the pure-Python version instead of the compiled one (which
-  comes at less than 1 MB). You can also add the flag on its own line in your `requirements.txt`. See this discussion
-  https://github.com/samuelcolvin/pydantic/issues/2276 for more information.
-
 - On KV v1 secret engines, if your secret has a `data` key and you do not specify a `vault_secret_key`
 to load the whole secret at once, Pydantic-Vault will only load the content of the `data` key.
   For example, with a secret `kv/my-secret`
@@ -610,6 +603,15 @@ to load the whole secret at once, Pydantic-Vault will only load the content of t
   **Workaround:** Rename the `data` key in your secret 😅
 
   **Workaround:** Migrate to KV v2
+
+- On Pydantic version before 1.10.3, Pydantic by default takes up ~50-80 MB, because it is compiled to a native extension
+  and optimized for speed instead of file size. If you don't rely much on Pydantic (you only use it for your app configuration
+  with Pydantic-Vault, you parse/serialize a low volume of JSON, your code is generally slow and Pydantic wouldn't be the
+  bottleneck) you can use the flag `--no-binary pydantic` when running `pip install` to install the pure-Python version
+  instead of the compiled one (which comes at less than 1 MB). You can also add the flag on its own line in your
+  `requirements.txt`. See this discussion https://github.com/samuelcolvin/pydantic/issues/2276 for more information.
+
+  This has been fixed in Pydantic 1.10.3, and a default install with a precompiled wheel now takes ~8 MB.
 
 ## Inspirations
 
