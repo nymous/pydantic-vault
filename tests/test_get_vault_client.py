@@ -957,6 +957,11 @@ def test_get_vault_client_custom_ssl_priority(
     )
 
     # fmt: off
-    assert ("pydantic-vault", logging.DEBUG, "Found Vault CA bundle '/path/to/ca.crt' in environment variables") in caplog.record_tuples
-    assert ("pydantic-vault", logging.DEBUG, "Found Vault CA bundle 'False' in Config") in caplog.record_tuples
+    ca_in_config_log = ("pydantic-vault", logging.DEBUG, "Found Vault CA bundle 'False' in Config")
+    ca_in_environment_log = ("pydantic-vault", logging.DEBUG, "Found Vault CA bundle '/path/to/ca.crt' in environment variables")
+
+    assert ca_in_config_log in caplog.record_tuples
+    assert ca_in_environment_log in caplog.record_tuples
+    # Ensure the Environment variable log happens after the other, so users know it was considered last and used
+    assert caplog.record_tuples.index(ca_in_config_log) < caplog.record_tuples.index(ca_in_environment_log)
     # fmt: on

@@ -149,6 +149,8 @@ You can configure the behaviour of Pydantic-vault in your `Settings.Config` clas
 | `vault_auth_mount_point`   | `str \| None`         | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point                                          |
 | `vault_certificate_verify` | `str \| bool \| None` | No       | `VAULT_CA_BUNDLE`        | The path to a CA bundle validating your Vault certificate, or `False` to disable verification (see [hvac docs][hvac-private-ca]) |
 
+Environment variables override what has been defined in the `Config` class.
+
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 
 ### Authentication
@@ -171,8 +173,8 @@ Support is planned for GKE authentication methods.
 To authenticate using the [Approle auth method][vault-auth-approle], you need to pass a role ID and a secret ID to your Settings class.
 
 Pydantic-vault reads this information from the following sources (in descending order of priority):
-  - the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.Config` class (`vault_secret_id` can be a `str` or a `SecretStr`)
-  - the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
+- the `VAULT_ROLE_ID` and `VAULT_SECRET_ID` environment variables
+- the `vault_role_id` and `vault_secret_id` configuration fields in your `Settings.Config` class (`vault_secret_id` can be a `str` or a `SecretStr`)
 
 You can also mix-and-match, e.g. write the role ID in your `Settings.Config` class and retrieve the secret ID from the environment at runtime.
 
@@ -215,8 +217,8 @@ class Settings(BaseSettings):
 To authenticate using the [Kubernetes auth method][vault-auth-kubernetes], you need to pass a role to your Settings class.
 
 Pydantic-vault reads this information from the following sources (in descending order of priority):
-  - the `vault_kubernetes_role` configuration field in your `Settings.Config` class, which must be a `str`
-  - the `VAULT_KUBERNETES_ROLE` environment variable
+- the `VAULT_KUBERNETES_ROLE` environment variable
+- the `vault_kubernetes_role` configuration field in your `Settings.Config` class, which must be a `str`
 
 The Kubernetes service account token will be read from the file at `/var/run/secrets/kubernetes.io/serviceaccount/token`.
 
@@ -257,10 +259,10 @@ class Settings(BaseSettings):
 
 To authenticate using the [Token auth method][vault-auth-token], you need to pass a Vault token to your `Settings` class.
 
-Pydantic-vault reads this token from the following sources (in descending order of priority):
-  - the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
-  - the `VAULT_TOKEN` environment variable
-  - the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-vault will transparently reuse its token)
+Pydantic-Vault reads this token from the following sources (in descending order of priority):
+- the `VAULT_TOKEN` environment variable
+- the `~/.vault-token` file (so you can use the `vault` CLI to login locally, Pydantic-Vault will transparently reuse its token)
+- the `vault_token` configuration field in your `Settings.Config` class, which can be a `str` or a `SecretStr`
 
 Example:
 ```python
