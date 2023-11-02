@@ -61,31 +61,37 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
 
     # URL
     _vault_url: Optional[str] = None
-    if "VAULT_ADDR" in os.environ:
-        _vault_url = os.environ["VAULT_ADDR"]
-        logger.debug(f"Found Vault Address '{_vault_url}' in environment variables")
     if getattr(settings.__config__, "vault_url", None) is not None:
         _vault_url = settings.__config__.vault_url  # type: ignore
         logger.debug(f"Found Vault Address '{_vault_url}' in Config")
+    if "VAULT_ADDR" in os.environ:
+        _vault_url = os.environ["VAULT_ADDR"]
+        logger.debug(f"Found Vault Address '{_vault_url}' in environment variables")
     if _vault_url is None:
         raise VaultParameterError("No URL provided to connect to Vault")
 
     # Namespace
     _vault_namespace: Optional[str] = None
+    if getattr(settings.__config__, "vault_namespace", None) is not None:
+        _vault_namespace = cast(str, settings.__config__.vault_namespace)  # type: ignore
+        hvac_parameters.update({"namespace": _vault_namespace})
+        logger.debug(f"Found Vault Namespace '{_vault_namespace}' in Config")
     if "VAULT_NAMESPACE" in os.environ:
         _vault_namespace = os.environ["VAULT_NAMESPACE"]
         hvac_parameters.update({"namespace": _vault_namespace})
         logger.debug(
             f"Found Vault Namespace '{_vault_namespace}' in environment variables"
         )
-    if getattr(settings.__config__, "vault_namespace", None) is not None:
-        _vault_namespace = cast(str, settings.__config__.vault_namespace)  # type: ignore
-        hvac_parameters.update({"namespace": _vault_namespace})
-        logger.debug(f"Found Vault Namespace '{_vault_namespace}' in Config")
 
     # Certificate verification
+    if getattr(settings.__config__, "vault_certificate_verify", None) is not None:
+        _vault_certificate_verify: Union[bool, str] = cast(
+            Union[bool, str], settings.__config__.vault_certificate_verify  # type: ignore
+        )
+        hvac_parameters.update({"verify": _vault_certificate_verify})
+        logger.debug(f"Found Vault CA bundle '{_vault_certificate_verify}' in Config")
     if "VAULT_CA_BUNDLE" in os.environ:
-        _vault_certificate_verify: Union[bool, str] = os.environ["VAULT_CA_BUNDLE"]
+        _vault_certificate_verify = os.environ["VAULT_CA_BUNDLE"]
         try:
             hvac_parameters.update(
                 {"verify": parse_obj_as(bool, _vault_certificate_verify)}
@@ -95,26 +101,20 @@ def _get_authenticated_vault_client(settings: BaseSettings) -> Optional[HvacClie
         logger.debug(
             f"Found Vault CA bundle '{_vault_certificate_verify}' in environment variables"
         )
-    if getattr(settings.__config__, "vault_certificate_verify", None) is not None:
-        _vault_certificate_verify = cast(
-            Union[bool, str], settings.__config__.vault_certificate_verify  # type: ignore
-        )
-        hvac_parameters.update({"verify": _vault_certificate_verify})
-        logger.debug(f"Found Vault CA bundle '{_vault_certificate_verify}' in Config")
 
     # Auth method parameters
     _vault_auth_method_parameters: AuthMethodParameters = {}
-    if "VAULT_AUTH_MOUNT_POINT" in os.environ:
-        _vault_auth_mount_point = os.environ["VAULT_AUTH_MOUNT_POINT"]
-        _vault_auth_method_parameters["mount_point"] = _vault_auth_mount_point
-        logger.debug(
-            f"Found Vault Auth mount point '{_vault_auth_mount_point}' in environment variables"
-        )
     if getattr(settings.__config__, "vault_auth_mount_point", None) is not None:
         _vault_auth_mount_point: str = settings.__config__.vault_auth_mount_point  # type: ignore
         _vault_auth_method_parameters["mount_point"] = _vault_auth_mount_point
         logger.debug(
             f"Found Vault Auth mount point '{_vault_auth_mount_point}' in Config"
+        )
+    if "VAULT_AUTH_MOUNT_POINT" in os.environ:
+        _vault_auth_mount_point = os.environ["VAULT_AUTH_MOUNT_POINT"]
+        _vault_auth_method_parameters["mount_point"] = _vault_auth_mount_point
+        logger.debug(
+            f"Found Vault Auth mount point '{_vault_auth_mount_point}' in environment variables"
         )
 
     _vault_token = _extract_vault_token(settings)
@@ -176,15 +176,7 @@ def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
     _vault_role_id: Optional[str] = None
     _vault_secret_id: Optional[SecretStr] = None
 
-    # Load from environment
-    if "VAULT_ROLE_ID" in os.environ:
-        _vault_role_id = os.environ["VAULT_ROLE_ID"]
-        logger.debug(f"Found Vault Role ID '{_vault_role_id}' in environment variables")
-    if "VAULT_SECRET_ID" in os.environ:
-        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
-        logger.debug("Found Vault Secret ID in environment variables")
-
-    # Load (and eventually override) from BaseSettings.Config
+    # Load from BaseSettings.Config
     if getattr(settings.__config__, "vault_role_id", None) is not None:
         _vault_role_id = settings.__config__.vault_role_id  # type: ignore
         logger.debug(f"Found Vault Role ID '{_vault_role_id}' in Config")
@@ -195,6 +187,14 @@ def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
             _vault_secret_id = SecretStr(settings.__config__.vault_secret_id)  # type: ignore
         logger.debug(f"Found Vault Secret ID in Config")
 
+    # Load (and eventually override) from environment
+    if "VAULT_ROLE_ID" in os.environ:
+        _vault_role_id = os.environ["VAULT_ROLE_ID"]
+        logger.debug(f"Found Vault Role ID '{_vault_role_id}' in environment variables")
+    if "VAULT_SECRET_ID" in os.environ:
+        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
+        logger.debug("Found Vault Secret ID in environment variables")
+
     if _vault_role_id is not None and _vault_secret_id is not None:
         return Approle(role_id=_vault_role_id, secret_id=_vault_secret_id)
 
@@ -204,14 +204,6 @@ def _extract_approle(settings: BaseSettings) -> Optional[Approle]:
 def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
     """Extract Vault token from environment, from .vault-token file or from BaseSettings.Config"""
     _vault_token: SecretStr
-    if getattr(settings.__config__, "vault_token", None) is not None:
-        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
-            _vault_token = settings.__config__.vault_token  # type: ignore
-        else:
-            _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
-        logger.debug("Found Vault Token in Config")
-        return _vault_token
-
     if "VAULT_TOKEN" in os.environ:
         _vault_token = SecretStr(os.environ["VAULT_TOKEN"])
         logger.debug("Found Vault Token in environment variables")
@@ -222,6 +214,14 @@ def _extract_vault_token(settings: BaseSettings) -> Optional[SecretStr]:
             _vault_token = SecretStr(token_file.read().strip())
             logger.debug("Found Vault Token in file '~/.vault-token'")
             return _vault_token
+
+    if getattr(settings.__config__, "vault_token", None) is not None:
+        if isinstance(settings.__config__.vault_token, SecretStr):  # type: ignore
+            _vault_token = settings.__config__.vault_token  # type: ignore
+        else:
+            _vault_token = SecretStr(settings.__config__.vault_token)  # type: ignore
+        logger.debug("Found Vault Token in Config")
+        return _vault_token
 
     return None
 
@@ -243,14 +243,14 @@ def _extract_kubernetes(settings: BaseSettings) -> Optional[Kubernetes]:
 
         # Kubernetes role
         kubernetes_role: Optional[str] = None
+        if getattr(settings.__config__, "vault_kubernetes_role", None) is not None:
+            kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
+            logger.debug(f"Found Kubernetes role '{kubernetes_role}' in Config")
         if "VAULT_KUBERNETES_ROLE" in os.environ:
             kubernetes_role = os.environ["VAULT_KUBERNETES_ROLE"]
             logger.debug(
                 f"Found Kubernetes role '{kubernetes_role}' in environment variables"
             )
-        if getattr(settings.__config__, "vault_kubernetes_role", None) is not None:
-            kubernetes_role = settings.__config__.vault_kubernetes_role  # type: ignore
-            logger.debug(f"Found Kubernetes role '{kubernetes_role}' in Config")
 
         if kubernetes_role is not None:
             return Kubernetes(role=kubernetes_role, jwt_token=_kubernetes_jwt)
