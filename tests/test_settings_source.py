@@ -84,7 +84,7 @@ def bypass_hvac_client(mocker: MockerFixture) -> MagicMock:
 
 def test_get_vault_secrets() -> None:
     class Settings(BaseSettings):
-        username: str = Field(
+        username: str = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="username",
@@ -107,7 +107,7 @@ def test_get_vault_secrets() -> None:
 def test_do_not_search_vault_for_keys_not_configured() -> None:
     class Settings(BaseSettings):
         simple_field: str = "doesn't matter"
-        field_from_vault: str = Field(
+        field_from_vault: str = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
@@ -124,22 +124,22 @@ def test_do_not_search_vault_for_keys_not_configured() -> None:
 
 def test_do_not_override_default_value_if_secret_is_not_found() -> None:
     class Settings(BaseSettings):
-        field_from_vault: str = Field(
+        field_from_vault: str = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="password",
         )
-        path_not_found: str = Field(
+        path_not_found: str = Field(  # type: ignore
             "default_value",
             vault_secret_path="not/found",
             vault_secret_key="does_not_matter",
         )
-        path_almost_found: str = Field(
+        path_almost_found: str = Field(  # type: ignore
             "default_value",
             vault_secret_path="secret/data/first_level_key/not_found",
             vault_secret_key="does_not_exist",
         )
-        key_not_found: str = Field(
+        key_not_found: str = Field(  # type: ignore
             "default_value",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="does_not_exist",
@@ -173,7 +173,7 @@ def test_get_secret_without_key() -> None:
             {"username": "doesn't matter", "password": "doesn't matter"},
             vault_secret_path="database/creds/db_role",
         )
-        kvv2_secret: Dict[str, Any] = Field(
+        kvv2_secret: Dict[str, Any] = Field(  # type: ignore
             {}, vault_secret_path="secret/data/first_level_key"
         )
 
@@ -200,13 +200,13 @@ def test_get_secret_without_key() -> None:
 
 def test_get_secrets_from_different_mount_points() -> None:
     class Settings(BaseSettings):
-        field_from_kvv1: str = Field(
+        field_from_kvv1: str = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="kv/normal_secret",
             vault_secret_key="kvv1_key",
         )
 
-        field_from_kvv2: str = Field(
+        field_from_kvv2: str = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="username",
@@ -247,17 +247,17 @@ def test_get_secret_jsonified() -> None:
 
 def test_get_secret_in_data_key() -> None:
     class Settings(BaseSettings):
-        kvv1_data_with_key: Dict[str, Any] = Field(
+        kvv1_data_with_key: Dict[str, Any] = Field(  # type: ignore
             {}, vault_secret_path="kv/secret_with_data_key", vault_secret_key="data"
         )
         # FIXME: KV v1 secret with a `data` key and configured without a
         #        vault_secret_key is currently not supported
-        kvv2_data_with_key: Dict[str, Any] = Field(
+        kvv2_data_with_key: Dict[str, Any] = Field(  # type: ignore
             {},
             vault_secret_path="secret/data/secret_with_data_key",
             vault_secret_key="data",
         )
-        kvv2_data_without_key: Dict[str, Any] = Field(
+        kvv2_data_without_key: Dict[str, Any] = Field(  # type: ignore
             {},
             vault_secret_path="secret/data/secret_with_data_key",
         )
@@ -277,7 +277,7 @@ def test_get_secret_in_data_key() -> None:
 
 def test_get_secret_bad_json() -> None:
     class Settings(BaseSettings):
-        bad_json: Dict[str, Any] = Field(
+        bad_json: Dict[str, Any] = Field(  # type: ignore
             {}, vault_secret_path="secret/data/bad_json", vault_secret_key="bad_json"
         )
 
@@ -292,7 +292,7 @@ def test_get_secret_bad_json() -> None:
 
 def test_log_warning_if_no_authentication_found(caplog: LogCaptureFixture) -> None:
     class Settings(BaseSettings):
-        username: str = Field(
+        username: str = Field(  # type: ignore
             "doesn't matter",
             vault_secret_path="secret/data/first_level_key",
             vault_secret_key="username",
