@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- BREAKING: Make environment variables override what is defined in the Config, contrary to the previous behaviour (#25)
+- BREAKING: Make environment variables override what is defined in the Config, contrary to the previous behaviour
+- Drop support of Python 3.7
 
 ## [1.0.0] - 2023-08-12
 
