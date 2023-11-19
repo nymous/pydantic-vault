@@ -142,12 +142,13 @@ password: SecretStr = Field(
 
 You can configure the behaviour of pydantic-settings-vault in your `Settings.model_config` dict, or using environment variables:
 
-| Settings name                  | Required | Environment variable     | Description                                                                                                   |
-|--------------------------------|----------|--------------------------|---------------------------------------------------------------------------------------------------------------|
-| `settings_customise_sources()` | **Yes**  | N/A                      | You need to implement this function to use Vault as a settings source, and choose the priority order you want |
-| `vault_url`                    | **Yes**  | `VAULT_ADDR`             | Your Vault URL                                                                                                |
-| `vault_namespace`              | No       | `VAULT_NAMESPACE`        | Your Vault namespace (if you use one, requires Vault Enterprise)                                              |
-| `vault_auth_mount_point`       | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point                       |
+| Settings name                  | Type                  | Required | Environment variable     | Description                                                                                                                      |
+|--------------------------------|-----------------------|----------|--------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `settings_customise_sources()` |                       | **Yes**  | N/A                      | You need to implement this function to use Vault as a settings source, and choose the priority order you want                    |
+| `vault_url`                    | `str`                 | **Yes**  | `VAULT_ADDR`             | Your Vault URL                                                                                                                   |
+| `vault_namespace`              | `str \| None`         | No       | `VAULT_NAMESPACE`        | Your Vault namespace (if you use one, requires Vault Enterprise)                                                                 |
+| `vault_auth_mount_point`       | `str \| None`         | No       | `VAULT_AUTH_MOUNT_POINT` | The mount point of the authentication method, if different from its default mount point                                          |
+| `vault_certificate_verify`     | `str \| bool \| None` | No       | `VAULT_CA_BUNDLE`        | The path to a CA bundle validating your Vault certificate, or `False` to disable verification (see [hvac docs][hvac-private-ca]) |
 
 You can also configure everything available in the original Pydantic `BaseSettings` class.
 
@@ -647,6 +648,7 @@ to load the whole secret at once, pydantic-settings-vault will only load the con
 pydantic-settings-vault is available under the [MIT license](./LICENSE).
 
 [ansible hashi_vault]: https://docs.ansible.com/ansible/latest/collections/community/hashi_vault/hashi_vault_lookup.html
+[hvac-private-ca]: https://hvac.readthedocs.io/en/stable/advanced_usage.html#making-use-of-private-ca
 [pydantic]: https://docs.pydantic.dev/latest/
 [pydantic-basesettings]: https://docs.pydantic.dev/latest/usage/pydantic_settings/
 [pydantic-basesettings-customsource]: https://docs.pydantic.dev/latest/usage/pydantic_settings/#adding-sources

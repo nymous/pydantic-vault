@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 from pydantic import SecretStr
 from typing_extensions import TypedDict
@@ -7,6 +7,7 @@ from typing_extensions import TypedDict
 class HvacClientParameters(TypedDict, total=False):
     namespace: str
     token: str
+    verify: Union[bool, str]
 
 
 class HvacReadSecretParameters(TypedDict, total=False):
