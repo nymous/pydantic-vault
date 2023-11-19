@@ -63,31 +63,37 @@ def _get_authenticated_vault_client(
 
     # URL
     _vault_url: Optional[str] = None
-    if "VAULT_ADDR" in os.environ:
-        _vault_url = os.environ["VAULT_ADDR"]
-        logger.debug(f"Found Vault Address '{_vault_url}' in environment variables")
     if settings.model_config.get("vault_url") is not None:
         _vault_url = settings.model_config["vault_url"]  # type: ignore
         logger.debug(f"Found Vault Address '{_vault_url}' in model_config")
+    if "VAULT_ADDR" in os.environ:
+        _vault_url = os.environ["VAULT_ADDR"]
+        logger.debug(f"Found Vault Address '{_vault_url}' in environment variables")
     if _vault_url is None:
         raise VaultParameterError("No URL provided to connect to Vault")
 
     # Namespace
     _vault_namespace: Optional[str] = None
+    if settings.model_config.get("vault_namespace") is not None:
+        _vault_namespace = cast(str, settings.model_config["vault_namespace"])  # type: ignore
+        hvac_parameters.update({"namespace": _vault_namespace})
+        logger.debug(f"Found Vault Namespace '{_vault_namespace}' in model_config")
     if "VAULT_NAMESPACE" in os.environ:
         _vault_namespace = os.environ["VAULT_NAMESPACE"]
         hvac_parameters.update({"namespace": _vault_namespace})
         logger.debug(
             f"Found Vault Namespace '{_vault_namespace}' in environment variables"
         )
-    if settings.model_config.get("vault_namespace") is not None:
-        _vault_namespace = cast(str, settings.model_config["vault_namespace"])  # type: ignore
-        hvac_parameters.update({"namespace": _vault_namespace})
-        logger.debug(f"Found Vault Namespace '{_vault_namespace}' in model_config")
 
     # Certificate verification
+    if settings.model_config.get("vault_certificate_verify") is not None:
+        _vault_certificate_verify: Union[bool, str] = cast(
+            Union[bool, str], settings.model_config.get("vault_certificate_verify")
+        )
+        hvac_parameters.update({"verify": _vault_certificate_verify})
+        logger.debug(f"Found Vault CA bundle '{_vault_certificate_verify}' in Config")
     if "VAULT_CA_BUNDLE" in os.environ:
-        _vault_certificate_verify: Union[bool, str] = os.environ["VAULT_CA_BUNDLE"]
+        _vault_certificate_verify = os.environ["VAULT_CA_BUNDLE"]
         try:
             hvac_parameters.update(
                 {"verify": TypeAdapter(bool).validate_python(_vault_certificate_verify)}
@@ -97,26 +103,20 @@ def _get_authenticated_vault_client(
         logger.debug(
             f"Found Vault CA bundle '{_vault_certificate_verify}' in environment variables"
         )
-    if settings.model_config.get("vault_certificate_verify") is not None:
-        _vault_certificate_verify = cast(
-            Union[bool, str], settings.model_config.get("vault_certificate_verify")
-        )
-        hvac_parameters.update({"verify": _vault_certificate_verify})
-        logger.debug(f"Found Vault CA bundle '{_vault_certificate_verify}' in Config")
 
     # Auth method parameters
     _vault_auth_method_parameters: AuthMethodParameters = {}
-    if "VAULT_AUTH_MOUNT_POINT" in os.environ:
-        _vault_auth_mount_point = os.environ["VAULT_AUTH_MOUNT_POINT"]
-        _vault_auth_method_parameters["mount_point"] = _vault_auth_mount_point
-        logger.debug(
-            f"Found Vault Auth mount point '{_vault_auth_mount_point}' in environment variables"
-        )
     if settings.model_config.get("vault_auth_mount_point") is not None:
         _vault_auth_mount_point: str = settings.model_config["vault_auth_mount_point"]  # type: ignore
         _vault_auth_method_parameters["mount_point"] = _vault_auth_mount_point
         logger.debug(
             f"Found Vault Auth mount point '{_vault_auth_mount_point}' in model_config"
+        )
+    if "VAULT_AUTH_MOUNT_POINT" in os.environ:
+        _vault_auth_mount_point = os.environ["VAULT_AUTH_MOUNT_POINT"]
+        _vault_auth_method_parameters["mount_point"] = _vault_auth_mount_point
+        logger.debug(
+            f"Found Vault Auth mount point '{_vault_auth_mount_point}' in environment variables"
         )
 
     _vault_token = _extract_vault_token(settings)
@@ -173,15 +173,7 @@ def _extract_approle(settings: Type[BaseSettings]) -> Optional[Approle]:
     _vault_role_id: Optional[str] = None
     _vault_secret_id: Optional[SecretStr] = None
 
-    # Load from environment
-    if "VAULT_ROLE_ID" in os.environ:
-        _vault_role_id = os.environ["VAULT_ROLE_ID"]
-        logger.debug(f"Found Vault Role ID '{_vault_role_id}' in environment variables")
-    if "VAULT_SECRET_ID" in os.environ:
-        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
-        logger.debug("Found Vault Secret ID in environment variables")
-
-    # Load (and eventually override) from BaseSettings.model_config
+    # Load from BaseSettings.model_config
     if settings.model_config.get("vault_role_id") is not None:
         _vault_role_id = settings.model_config["vault_role_id"]  # type: ignore
         logger.debug(f"Found Vault Role ID '{_vault_role_id}' in model_config")
@@ -192,6 +184,14 @@ def _extract_approle(settings: Type[BaseSettings]) -> Optional[Approle]:
             _vault_secret_id = SecretStr(settings.model_config["vault_secret_id"])  # type: ignore
         logger.debug(f"Found Vault Secret ID in model_config")
 
+    # Load (and eventually override) from environment
+    if "VAULT_ROLE_ID" in os.environ:
+        _vault_role_id = os.environ["VAULT_ROLE_ID"]
+        logger.debug(f"Found Vault Role ID '{_vault_role_id}' in environment variables")
+    if "VAULT_SECRET_ID" in os.environ:
+        _vault_secret_id = SecretStr(os.environ["VAULT_SECRET_ID"])
+        logger.debug("Found Vault Secret ID in environment variables")
+
     if _vault_role_id is not None and _vault_secret_id is not None:
         return Approle(role_id=_vault_role_id, secret_id=_vault_secret_id)
 
@@ -201,14 +201,6 @@ def _extract_approle(settings: Type[BaseSettings]) -> Optional[Approle]:
 def _extract_vault_token(settings: Type[BaseSettings]) -> Optional[SecretStr]:
     """Extract Vault token from environment, from .vault-token file or from BaseSettings.model_config"""
     _vault_token: SecretStr
-    if settings.model_config.get("vault_token") is not None:
-        if isinstance(settings.model_config["vault_token"], SecretStr):  # type: ignore
-            _vault_token = settings.model_config["vault_token"]  # type: ignore
-        else:
-            _vault_token = SecretStr(settings.model_config["vault_token"])  # type: ignore
-        logger.debug("Found Vault Token in model_config")
-        return _vault_token
-
     if "VAULT_TOKEN" in os.environ:
         _vault_token = SecretStr(os.environ["VAULT_TOKEN"])
         logger.debug("Found Vault Token in environment variables")
@@ -219,6 +211,14 @@ def _extract_vault_token(settings: Type[BaseSettings]) -> Optional[SecretStr]:
             _vault_token = SecretStr(token_file.read().strip())
             logger.debug("Found Vault Token in file '~/.vault-token'")
             return _vault_token
+
+    if settings.model_config.get("vault_token") is not None:
+        if isinstance(settings.model_config["vault_token"], SecretStr):  # type: ignore
+            _vault_token = settings.model_config["vault_token"]  # type: ignore
+        else:
+            _vault_token = SecretStr(settings.model_config["vault_token"])  # type: ignore
+        logger.debug("Found Vault Token in model_config")
+        return _vault_token
 
     return None
 
@@ -235,14 +235,14 @@ def _extract_kubernetes(settings: Type[BaseSettings]) -> Optional[Kubernetes]:
 
         # Kubernetes role
         kubernetes_role: Optional[str] = None
+        if settings.model_config.get("vault_kubernetes_role") is not None:
+            kubernetes_role = settings.model_config["vault_kubernetes_role"]  # type: ignore
+            logger.debug(f"Found Kubernetes role '{kubernetes_role}' in model_config")
         if "VAULT_KUBERNETES_ROLE" in os.environ:
             kubernetes_role = os.environ["VAULT_KUBERNETES_ROLE"]
             logger.debug(
                 f"Found Kubernetes role '{kubernetes_role}' in environment variables"
             )
-        if settings.model_config.get("vault_kubernetes_role") is not None:
-            kubernetes_role = settings.model_config["vault_kubernetes_role"]  # type: ignore
-            logger.debug(f"Found Kubernetes role '{kubernetes_role}' in model_config")
 
         if kubernetes_role is not None:
             return Kubernetes(role=kubernetes_role, jwt_token=_kubernetes_jwt)
