@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pydantic-settings-vault"
-version = "1.0.0"
+version = "2.0.0"
 description = "A simple extension to pydantic-settings that can retrieve secrets from Hashicorp Vault"
 authors = [
   "Aleksey Petrunnik <petrunnik.a@gmail.com>",

@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2023-11-19
+
+### Added
+- Relax the version constraint for dependencies (support `hvac` 1.X)
+- Support providing a custom CA bundle for Vault certificate validation, or skipping SSL validation altogether
+
+### Changed
+
+- BREAKING: Make environment variables override what is defined in the Config, contrary to the previous behaviour (#25)
+
 ## [1.0.0] - 2023-08-12
 
 ### Added
