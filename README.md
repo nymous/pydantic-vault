@@ -167,7 +167,7 @@ has exhausted all authentication methods. In this case it gives up and logs the 
 
 You only need to know this order of priority if you specify the authentication parameters for multiple methods.
 
-Support is planned for GKE authentication methods.
+Support is planned for GKE authentication methods (contributions welcome! :wink:).
 
 #### Approle
 
@@ -610,13 +610,6 @@ settings.password.get_secret_value()  # "a_v3ry_s3cur3_p4ssw0rd"
 ```
 
 ## Known limitations
-
-- Pydantic by default takes up ~80 MB, because it is compiled to a native extension and optimized for speed instead of file
-  size. If you don't rely much on Pydantic (you only use it for your app configuration with pydantic-settings-vault, you parse/serialize
-  a low volume of JSON, your code is generally slow and Pydantic wouldn't be the bottleneck) you can use the flag
-  `--no-binary pydantic` when running `pip install` to install the pure-Python version instead of the compiled one (which
-  comes at less than 1 MB). You can also add the flag on its own line in your `requirements.txt`. See this discussion
-  https://github.com/samuelcolvin/pydantic/issues/2276 for more information.
 
 - On KV v1 secret engines, if your secret has a `data` key and you do not specify a `vault_secret_key`
 to load the whole secret at once, pydantic-settings-vault will only load the content of the `data` key.
